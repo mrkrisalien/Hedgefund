@@ -1,0 +1,373 @@
+{
+  "summary": {
+    "hypothesis": "Dynamic same-day BTC long strangle plus optional BTCUSD perp",
+    "closed_option_roundtrips": 11,
+    "btc_strangle_cycles": 3,
+    "equal_qty_cycles": 3,
+    "median_entry_gap_seconds": 4.08,
+    "median_hold_minutes": 78.1,
+    "median_wing_pct": 2.025,
+    "common_exit_clock_minutes": {
+      "0": 8,
+      "30": 3
+    },
+    "perp_roundtrips": 0,
+    "confidence": {
+      "same_expiry_call_put": 0.82,
+      "near_simultaneous_legs": 0.88,
+      "scheduled_reassessment": 0.74,
+      "atr_style_wings": 0.61,
+      "equal_qty": 0.55,
+      "independent_perp": 0.7
+    }
+  },
+  "cycles": [
+    {
+      "call": {
+        "symbol": "C-BTC-79800-260826",
+        "qty": 1.0,
+        "entry_time": "2026-08-26T11:42:04.413317+05:30",
+        "exit_time": "2026-08-26T13:00:08.877231+05:30",
+        "entry_price": 49.0,
+        "exit_price": 20.0,
+        "hold_minutes": 78.1,
+        "realised_pnl": 0.0,
+        "option": {
+          "kind": "CALL",
+          "asset": "BTC",
+          "strike": 79800,
+          "expiry": "260826",
+          "symbol": "C-BTC-79800-260826"
+        },
+        "is_perp": false
+      },
+      "put": {
+        "symbol": "P-BTC-78200-260826",
+        "qty": 1.0,
+        "entry_time": "2026-08-26T11:42:08.493846+05:30",
+        "exit_time": "2026-08-26T13:00:11.784470+05:30",
+        "entry_price": 37.0,
+        "exit_price": 21.0,
+        "hold_minutes": 78.1,
+        "realised_pnl": 0.0,
+        "option": {
+          "kind": "PUT",
+          "asset": "BTC",
+          "strike": 78200,
+          "expiry": "260826",
+          "symbol": "P-BTC-78200-260826"
+        },
+        "is_perp": false
+      },
+      "entry_gap_seconds": 4.08,
+      "qty_call": 1.0,
+      "qty_put": 1.0,
+      "qty_equal": true,
+      "call_strike": 79800,
+      "put_strike": 78200,
+      "implied_spot": 79000.0,
+      "wing_pct": 2.025,
+      "hold_minutes_call": 78.1,
+      "hold_minutes_put": 78.1,
+      "pnl": 0.0
+    },
+    {
+      "call": {
+        "symbol": "C-BTC-79800-260826",
+        "qty": 1.0,
+        "entry_time": "2026-08-26T11:42:04.413317+05:30",
+        "exit_time": "2026-08-26T14:00:09.033064+05:30",
+        "entry_price": 49.0,
+        "exit_price": 12.0,
+        "hold_minutes": 138.1,
+        "realised_pnl": 0.0,
+        "option": {
+          "kind": "CALL",
+          "asset": "BTC",
+          "strike": 79800,
+          "expiry": "260826",
+          "symbol": "C-BTC-79800-260826"
+        },
+        "is_perp": false
+      },
+      "put": {
+        "symbol": "P-BTC-78200-260826",
+        "qty": 1.0,
+        "entry_time": "2026-08-26T11:42:08.493846+05:30",
+        "exit_time": "2026-08-26T13:30:15.585423+05:30",
+        "entry_price": 37.0,
+        "exit_price": 16.0,
+        "hold_minutes": 108.1,
+        "realised_pnl": 0.0,
+        "option": {
+          "kind": "PUT",
+          "asset": "BTC",
+          "strike": 78200,
+          "expiry": "260826",
+          "symbol": "P-BTC-78200-260826"
+        },
+        "is_perp": false
+      },
+      "entry_gap_seconds": 4.08,
+      "qty_call": 1.0,
+      "qty_put": 1.0,
+      "qty_equal": true,
+      "call_strike": 79800,
+      "put_strike": 78200,
+      "implied_spot": 79000.0,
+      "wing_pct": 2.025,
+      "hold_minutes_call": 138.1,
+      "hold_minutes_put": 108.1,
+      "pnl": 0.0
+    },
+    {
+      "call": {
+        "symbol": "C-BTC-79600-270826",
+        "qty": 1.0,
+        "entry_time": "2026-08-27T12:00:58.218759+05:30",
+        "exit_time": "2026-08-27T13:00:09.403056+05:30",
+        "entry_price": 33.0,
+        "exit_price": 24.0,
+        "hold_minutes": 59.2,
+        "realised_pnl": 0.0,
+        "option": {
+          "kind": "CALL",
+          "asset": "BTC",
+          "strike": 79600,
+          "expiry": "270826",
+          "symbol": "C-BTC-79600-270826"
+        },
+        "is_perp": false
+      },
+      "put": {
+        "symbol": "P-BTC-78000-270826",
+        "qty": 1.0,
+        "entry_time": "2026-08-27T12:01:01.391088+05:30",
+        "exit_time": "2026-08-27T13:00:12.973045+05:30",
+        "entry_price": 20.0,
+        "exit_price": 12.1,
+        "hold_minutes": 59.2,
+        "realised_pnl": 0.0,
+        "option": {
+          "kind": "PUT",
+          "asset": "BTC",
+          "strike": 78000,
+          "expiry": "270826",
+          "symbol": "P-BTC-78000-270826"
+        },
+        "is_perp": false
+      },
+      "entry_gap_seconds": 3.17,
+      "qty_call": 1.0,
+      "qty_put": 1.0,
+      "qty_equal": true,
+      "call_strike": 79600,
+      "put_strike": 78000,
+      "implied_spot": 78800.0,
+      "wing_pct": 2.03,
+      "hold_minutes_call": 59.2,
+      "hold_minutes_put": 59.2,
+      "pnl": 0.0
+    }
+  ],
+  "roundtrips": [
+    {
+      "symbol": "C-BTC-79800-260826",
+      "qty": 1.0,
+      "entry_time": "2026-08-26T11:42:04.413317+05:30",
+      "exit_time": "2026-08-26T13:00:08.877231+05:30",
+      "entry_price": 49.0,
+      "exit_price": 20.0,
+      "hold_minutes": 78.1,
+      "realised_pnl": 0.0,
+      "option": {
+        "kind": "CALL",
+        "asset": "BTC",
+        "strike": 79800,
+        "expiry": "260826",
+        "symbol": "C-BTC-79800-260826"
+      },
+      "is_perp": false
+    },
+    {
+      "symbol": "P-BTC-78200-260826",
+      "qty": 1.0,
+      "entry_time": "2026-08-26T11:42:08.493846+05:30",
+      "exit_time": "2026-08-26T13:00:11.784470+05:30",
+      "entry_price": 37.0,
+      "exit_price": 21.0,
+      "hold_minutes": 78.1,
+      "realised_pnl": 0.0,
+      "option": {
+        "kind": "PUT",
+        "asset": "BTC",
+        "strike": 78200,
+        "expiry": "260826",
+        "symbol": "P-BTC-78200-260826"
+      },
+      "is_perp": false
+    },
+    {
+      "symbol": "C-BTC-79600-260826",
+      "qty": 1.0,
+      "entry_time": "2026-08-26T13:25:23.838816+05:30",
+      "exit_time": "2026-08-26T13:30:12.054511+05:30",
+      "entry_price": 33.0,
+      "exit_price": 28.0,
+      "hold_minutes": 4.8,
+      "realised_pnl": 0.0,
+      "option": {
+        "kind": "CALL",
+        "asset": "BTC",
+        "strike": 79600,
+        "expiry": "260826",
+        "symbol": "C-BTC-79600-260826"
+      },
+      "is_perp": false
+    },
+    {
+      "symbol": "P-BTC-78200-260826",
+      "qty": 1.0,
+      "entry_time": "2026-08-26T11:42:08.493846+05:30",
+      "exit_time": "2026-08-26T13:30:15.585423+05:30",
+      "entry_price": 37.0,
+      "exit_price": 16.0,
+      "hold_minutes": 108.1,
+      "realised_pnl": 0.0,
+      "option": {
+        "kind": "PUT",
+        "asset": "BTC",
+        "strike": 78200,
+        "expiry": "260826",
+        "symbol": "P-BTC-78200-260826"
+      },
+      "is_perp": false
+    },
+    {
+      "symbol": "C-BTC-79800-260826",
+      "qty": 1.0,
+      "entry_time": "2026-08-26T11:42:04.413317+05:30",
+      "exit_time": "2026-08-26T14:00:09.033064+05:30",
+      "entry_price": 49.0,
+      "exit_price": 12.0,
+      "hold_minutes": 138.1,
+      "realised_pnl": 0.0,
+      "option": {
+        "kind": "CALL",
+        "asset": "BTC",
+        "strike": 79800,
+        "expiry": "260826",
+        "symbol": "C-BTC-79800-260826"
+      },
+      "is_perp": false
+    },
+    {
+      "symbol": "P-BTC-78200-260826",
+      "qty": 1.0,
+      "entry_time": "2026-08-26T13:53:33.387712+05:30",
+      "exit_time": "2026-08-26T14:00:14.082842+05:30",
+      "entry_price": 11.0,
+      "exit_price": 6.1,
+      "hold_minutes": 6.7,
+      "realised_pnl": 0.0,
+      "option": {
+        "kind": "PUT",
+        "asset": "BTC",
+        "strike": 78200,
+        "expiry": "260826",
+        "symbol": "P-BTC-78200-260826"
+      },
+      "is_perp": false
+    },
+    {
+      "symbol": "P-BTC-78200-260826",
+      "qty": 1.0,
+      "entry_time": "2026-08-26T13:53:33.387712+05:30",
+      "exit_time": "2026-08-26T15:00:14.808467+05:30",
+      "entry_price": 11.0,
+      "exit_price": 43.0,
+      "hold_minutes": 66.7,
+      "realised_pnl": 0.0,
+      "option": {
+        "kind": "PUT",
+        "asset": "BTC",
+        "strike": 78200,
+        "expiry": "260826",
+        "symbol": "P-BTC-78200-260826"
+      },
+      "is_perp": false
+    },
+    {
+      "symbol": "P-BTC-77800-260826",
+      "qty": 1.0,
+      "entry_time": "2026-08-26T14:49:31.008250+05:30",
+      "exit_time": "2026-08-26T15:30:10.314804+05:30",
+      "entry_price": 9.8,
+      "exit_price": 5.1,
+      "hold_minutes": 40.7,
+      "realised_pnl": 0.0,
+      "option": {
+        "kind": "PUT",
+        "asset": "BTC",
+        "strike": 77800,
+        "expiry": "260826",
+        "symbol": "P-BTC-77800-260826"
+      },
+      "is_perp": false
+    },
+    {
+      "symbol": "C-BTC-79600-270826",
+      "qty": 1.0,
+      "entry_time": "2026-08-27T12:00:58.218759+05:30",
+      "exit_time": "2026-08-27T13:00:09.403056+05:30",
+      "entry_price": 33.0,
+      "exit_price": 24.0,
+      "hold_minutes": 59.2,
+      "realised_pnl": 0.0,
+      "option": {
+        "kind": "CALL",
+        "asset": "BTC",
+        "strike": 79600,
+        "expiry": "270826",
+        "symbol": "C-BTC-79600-270826"
+      },
+      "is_perp": false
+    },
+    {
+      "symbol": "P-BTC-78000-270826",
+      "qty": 1.0,
+      "entry_time": "2026-08-27T12:01:01.391088+05:30",
+      "exit_time": "2026-08-27T13:00:12.973045+05:30",
+      "entry_price": 20.0,
+      "exit_price": 12.1,
+      "hold_minutes": 59.2,
+      "realised_pnl": 0.0,
+      "option": {
+        "kind": "PUT",
+        "asset": "BTC",
+        "strike": 78000,
+        "expiry": "270826",
+        "symbol": "P-BTC-78000-270826"
+      },
+      "is_perp": false
+    },
+    {
+      "symbol": "C-ETH-2450-290826",
+      "qty": 2.0,
+      "entry_time": "2026-08-29T13:24:18.799439+05:30",
+      "exit_time": "2026-08-29T14:00:13.590335+05:30",
+      "entry_price": 0.6,
+      "exit_price": 0.69,
+      "hold_minutes": 35.9,
+      "realised_pnl": 0.0,
+      "option": {
+        "kind": "CALL",
+        "asset": "ETH",
+        "strike": 2450,
+        "expiry": "290826",
+        "symbol": "C-ETH-2450-290826"
+      },
+      "is_perp": false
+    }
+  ]
+}

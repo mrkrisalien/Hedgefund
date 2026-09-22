@@ -1,0 +1,524 @@
+{
+  "generated_at": "2026-09-03T15:50:23.215342+05:30",
+  "segment": "mcx",
+  "cash_segment_enabled": true,
+  "mcx_segment_enabled": true,
+  "strategy": "separate cash and MCX books: cash 0.4% risk, MCX 1 mini lot, same-book trade memory in the prompt, hourly ATR on commodities",
+  "window_start": "2026-08-04",
+  "window_end": "2026-09-03",
+  "starting_equity": 84060.57,
+  "ending_equity": 85851.24,
+  "total_pnl": 1790.67,
+  "return_pct": 2.13,
+  "trades": 6,
+  "wins": 2,
+  "losses": 4,
+  "flats": 0,
+  "win_rate": 33.33,
+  "max_drawdown": -2686.13,
+  "reward_ratio": 3.0,
+  "min_confidence": 75,
+  "cash_risk_pct": 0.004,
+  "mcx_lots": 1,
+  "one_metal": true,
+  "hourly_mcx_atr": true,
+  "mcx_mini": true,
+  "live_trading_enabled": false,
+  "by_symbol": [
+    {
+      "symbol": "CRUDEOILM-21Sep2026-FUT",
+      "trades": 1,
+      "pnl": -24.49
+    },
+    {
+      "symbol": "GOLDM-04Sep2026-FUT",
+      "trades": 3,
+      "pnl": 111.1
+    },
+    {
+      "symbol": "SILVERM-30Nov2026-FUT",
+      "trades": 2,
+      "pnl": 1704.06
+    }
+  ],
+  "by_sector": [
+    {
+      "sector": "MCX",
+      "trades": 6,
+      "pnl": 1790.67
+    }
+  ],
+  "by_kind": [
+    {
+      "book": "MCX",
+      "trades": 6,
+      "pnl": 1790.67
+    }
+  ],
+  "exit_reasons": {
+    "EOD square-off": 3,
+    "SL": 2,
+    "TP": 1
+  },
+  "equity_curve": [
+    {
+      "date": "2026-08-04",
+      "equity": 84060.57
+    },
+    {
+      "date": "2026-08-04",
+      "equity": 84060.57
+    },
+    {
+      "date": "2026-08-05",
+      "equity": 87515.58
+    },
+    {
+      "date": "2026-08-06",
+      "equity": 87515.58
+    },
+    {
+      "date": "2026-08-07",
+      "equity": 87515.58
+    },
+    {
+      "date": "2026-08-10",
+      "equity": 88537.37
+    },
+    {
+      "date": "2026-08-11",
+      "equity": 87728.54
+    },
+    {
+      "date": "2026-08-12",
+      "equity": 87728.54
+    },
+    {
+      "date": "2026-08-13",
+      "equity": 87728.54
+    },
+    {
+      "date": "2026-08-14",
+      "equity": 87728.54
+    },
+    {
+      "date": "2026-08-17",
+      "equity": 87728.54
+    },
+    {
+      "date": "2026-08-18",
+      "equity": 87704.05
+    },
+    {
+      "date": "2026-08-19",
+      "equity": 87704.05
+    },
+    {
+      "date": "2026-08-20",
+      "equity": 85953.1
+    },
+    {
+      "date": "2026-08-21",
+      "equity": 85953.1
+    },
+    {
+      "date": "2026-08-24",
+      "equity": 85851.24
+    },
+    {
+      "date": "2026-08-25",
+      "equity": 85851.24
+    },
+    {
+      "date": "2026-08-26",
+      "equity": 85851.24
+    },
+    {
+      "date": "2026-08-27",
+      "equity": 85851.24
+    },
+    {
+      "date": "2026-08-28",
+      "equity": 85851.24
+    },
+    {
+      "date": "2026-08-31",
+      "equity": 85851.24
+    },
+    {
+      "date": "2026-09-01",
+      "equity": 85851.24
+    },
+    {
+      "date": "2026-09-02",
+      "equity": 85851.24
+    }
+  ],
+  "scan_log": [
+    {
+      "date": "2026-08-04",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "SILVERM-30Nov2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.053
+        }
+      ]
+    },
+    {
+      "date": "2026-08-05",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "SILVERM-30Nov2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.07
+        }
+      ]
+    },
+    {
+      "date": "2026-08-06",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "CRUDEOILM-21Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.113
+        }
+      ]
+    },
+    {
+      "date": "2026-08-07",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "SILVERM-30Nov2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.059
+        }
+      ]
+    },
+    {
+      "date": "2026-08-10",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "GOLDM-04Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.123
+        }
+      ]
+    },
+    {
+      "date": "2026-08-11",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "GOLDM-04Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.033
+        }
+      ]
+    },
+    {
+      "date": "2026-08-12",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "GOLDM-04Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.034
+        }
+      ]
+    },
+    {
+      "date": "2026-08-13",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "SILVERM-30Nov2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.099
+        }
+      ]
+    },
+    {
+      "date": "2026-08-14",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "CRUDEOILM-21Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.091
+        }
+      ]
+    },
+    {
+      "date": "2026-08-17",
+      "sectors": [],
+      "candidates": []
+    },
+    {
+      "date": "2026-08-18",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "CRUDEOILM-21Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.099
+        }
+      ]
+    },
+    {
+      "date": "2026-08-19",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "CRUDEOILM-21Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.111
+        }
+      ]
+    },
+    {
+      "date": "2026-08-20",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "SILVERM-30Nov2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.063
+        }
+      ]
+    },
+    {
+      "date": "2026-08-21",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "CRUDEOILM-21Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.121
+        }
+      ]
+    },
+    {
+      "date": "2026-08-24",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "GOLDM-04Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.03
+        }
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "sectors": [],
+      "candidates": []
+    },
+    {
+      "date": "2026-08-26",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "CRUDEOILM-21Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.065
+        }
+      ]
+    },
+    {
+      "date": "2026-08-27",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "CRUDEOILM-21Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.026
+        }
+      ]
+    },
+    {
+      "date": "2026-08-28",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "GOLDM-04Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.044
+        }
+      ]
+    },
+    {
+      "date": "2026-08-31",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "SILVERM-30Nov2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.198
+        }
+      ]
+    },
+    {
+      "date": "2026-09-01",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "CRUDEOILM-21Sep2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.049
+        }
+      ]
+    },
+    {
+      "date": "2026-09-02",
+      "sectors": [],
+      "candidates": [
+        {
+          "symbol": "SILVERM-30Nov2026-FUT",
+          "sector": "MCX",
+          "momentum": 0.105
+        }
+      ]
+    }
+  ],
+  "trade_log": [
+    {
+      "entry_date": "2026-08-05",
+      "symbol": "SILVERM-30Nov2026-FUT",
+      "sector": "MCX",
+      "kind": "MCX",
+      "momentum": 0.07,
+      "signal": "BUY",
+      "confidence": 78.0,
+      "entry": 230500.0,
+      "sl": 229300.0,
+      "tp": 234100.0,
+      "exit": 234100.0,
+      "qty": 1,
+      "pnl": 3455.01,
+      "costs": 144.99,
+      "reason": "TP",
+      "atr": 972.93,
+      "gate": "ok",
+      "logic": "Daily trend is bullish with higher highs and higher lows, and the latest daily candle closed near its high, indicating strong buying momentum. H1 shows a clear uptrend from 223792 to 228490 with consistent higher lows and strong upward momentum, confirming the bullish setup. Therefore, a BUY is recommended.",
+      "exit_time": "2026-08-05T12:16:00+00:00",
+      "equity_after": 87515.59
+    },
+    {
+      "entry_date": "2026-08-10",
+      "symbol": "GOLDM-04Sep2026-FUT",
+      "sector": "MCX",
+      "kind": "MCX",
+      "momentum": 0.123,
+      "signal": "BUY",
+      "confidence": 82.0,
+      "entry": 150700.0,
+      "sl": 150000.0,
+      "tp": 152700.0,
+      "exit": 151830.0,
+      "qty": 1,
+      "pnl": 1021.79,
+      "costs": 108.21,
+      "reason": "EOD square-off",
+      "atr": 534.71,
+      "gate": "ok",
+      "logic": "Daily trend is strongly bullish with higher highs and higher lows, closing at the highest level of the period. H1 momentum confirms bullish continuation with a breakout above recent highs and sustained buying pressure, supporting a long entry.",
+      "exit_time": "2026-08-10T17:59:00+00:00",
+      "equity_after": 88537.37
+    },
+    {
+      "entry_date": "2026-08-11",
+      "symbol": "GOLDM-04Sep2026-FUT",
+      "sector": "MCX",
+      "kind": "MCX",
+      "momentum": 0.033,
+      "signal": "BUY",
+      "confidence": 78.0,
+      "entry": 153500.0,
+      "sl": 152800.0,
+      "tp": 155600.0,
+      "exit": 152800.0,
+      "qty": 1,
+      "pnl": -808.83,
+      "costs": 108.83,
+      "reason": "SL",
+      "atr": 550.86,
+      "gate": "ok",
+      "logic": "Daily trend is strongly bullish with higher highs and higher lows, closing near highs at 151775. H1 momentum shows a pullback to support around 151100-151200 followed by a recovery, indicating buying interest. The opening momentum is positive, and recent MCX trades in this book were profitable, supporting a long entry.",
+      "exit_time": "2026-08-11T05:12:00+00:00",
+      "equity_after": 87728.54
+    },
+    {
+      "entry_date": "2026-08-18",
+      "symbol": "CRUDEOILM-21Sep2026-FUT",
+      "sector": "MCX",
+      "kind": "MCX",
+      "momentum": 0.099,
+      "signal": "BUY",
+      "confidence": 75.0,
+      "entry": 8100.0,
+      "sl": 7700.0,
+      "tp": 9300.0,
+      "exit": 8084.0,
+      "qty": 1,
+      "pnl": -24.49,
+      "costs": 8.49,
+      "reason": "EOD square-off",
+      "atr": 65.5,
+      "gate": "ok",
+      "logic": "Daily trend is bullish with higher lows and a strong close near the high, while H1 momentum shows a breakout above resistance with rising volume. The opening range momentum is positive, supporting a long entry in line with the long-only strategy.",
+      "exit_time": "2026-08-18T18:00:00+00:00",
+      "equity_after": 87704.05
+    },
+    {
+      "entry_date": "2026-08-20",
+      "symbol": "SILVERM-30Nov2026-FUT",
+      "sector": "MCX",
+      "kind": "MCX",
+      "momentum": 0.063,
+      "signal": "BUY",
+      "confidence": 75.0,
+      "entry": 247800.0,
+      "sl": 246200.0,
+      "tp": 252600.0,
+      "exit": 246200.0,
+      "qty": 1,
+      "pnl": -1750.95,
+      "costs": 150.95,
+      "reason": "SL",
+      "atr": 1286.64,
+      "gate": "ok",
+      "logic": "Daily trend is bullish with higher highs and higher lows, and the price is above recent consolidation. H1 momentum is strongly positive with a breakout above 243000, confirming buying pressure. Therefore, a BUY is warranted.",
+      "exit_time": "2026-08-20T11:46:00+00:00",
+      "equity_after": 85953.1
+    },
+    {
+      "entry_date": "2026-08-24",
+      "symbol": "GOLDM-04Sep2026-FUT",
+      "sector": "MCX",
+      "kind": "MCX",
+      "momentum": 0.03,
+      "signal": "BUY",
+      "confidence": 78.0,
+      "entry": 161900.0,
+      "sl": 161200.0,
+      "tp": 164000.0,
+      "exit": 161911.0,
+      "qty": 1,
+      "pnl": -101.86,
+      "costs": 112.86,
+      "reason": "EOD square-off",
+      "atr": 551.57,
+      "gate": "ok",
+      "logic": "Daily trend is strongly bullish with higher highs and higher lows, closing at the session high near 160916. H1 momentum is positive, with price making new highs and holding above prior consolidation, supporting a long entry.",
+      "exit_time": "2026-08-24T17:59:00+00:00",
+      "equity_after": 85851.24
+    }
+  ],
+  "go_live_recommendation": "Do not enable live trading"
+}

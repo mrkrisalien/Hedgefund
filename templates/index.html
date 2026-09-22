@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Autonomous AI Hedge Fund</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
+  <style>
+    :root {
+      --bg: #090d14;
+      --panel: #101826;
+      --line: #1c2738;
+      --text: #ffffff;
+      --muted: #ffffff;
+      --green: #3dd68c;
+      --red: #ff5c7a;
+      --amber: #f5c542;
+      --blue: #4ea1ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        linear-gradient(rgba(5, 11, 20, 0.88), rgba(5, 11, 20, 0.94)),
+        url("/design-assets/market-command-mountain-landscape.png") center / cover fixed;
+      color: #ffffff;
+      font-family: Inter, "IBM Plex Sans", sans-serif;
+    }
+    .app-frame { margin-left: 184px; min-height: 100vh; }
+    .sidebar {
+      position: fixed; inset: 0 auto 0 0; width: 184px; z-index: 20;
+      padding: 18px 12px; border-right: 1px solid var(--line);
+      background: rgba(6, 15, 28, 0.94); backdrop-filter: blur(16px);
+      display: flex; flex-direction: column;
+    }
+    .side-logo { font-weight: 800; color: #7db8ff; margin: 0 8px 20px; }
+    .side-logo span { color: var(--green); }
+    .side-nav { display: grid; gap: 5px; }
+    .side-nav a {
+      color: #c9d6e8; text-decoration: none; padding: 9px 11px;
+      border-radius: 7px; font-size: 12px; border: 1px solid transparent;
+    }
+    .side-nav a:hover, .side-nav a.active {
+      color: #fff; background: rgba(78, 161, 255, 0.14);
+      border-color: rgba(78, 161, 255, 0.24);
+    }
+    .mountain-note {
+      margin-top: auto; min-height: 128px; padding: 14px;
+      border: 1px solid rgba(125,184,255,.18); border-radius: 10px;
+      display: flex; align-items: flex-end; font-size: 12px; line-height: 1.5;
+      background:
+        linear-gradient(transparent, rgba(4,10,18,.92)),
+        url("/design-assets/market-command-mountain-landscape.png") center / cover;
+    }
+    th, td, p, .label, .chart-last, .value, .brand, .text-secondary, .small {
+      color: #ffffff !important;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--line);
+      background: #0c121c;
+    }
+    .brand { font-weight: 700; letter-spacing: 0.08em; font-size: 13px; }
+    .brand span { color: var(--green); }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    select, input, button {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font: inherit;
+    }
+    button.primary { background: var(--green); color: #07110c; font-weight: 700; border: 0; }
+    button.danger { background: var(--red); color: white; border: 0; }
+    .tabs button { cursor: pointer; }
+    .tabs button.active { border-color: var(--green); color: var(--green); }
+    main { padding: 16px 20px 40px; }
+    .grid { display: grid; gap: 12px; }
+    .grid > *, .card, .row > * { min-width: 0; }
+    select, input { max-width: 100%; }
+    main { overflow-x: hidden; }
+    .metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .two { grid-template-columns: 1.3fr 0.7fr; }
+    .card {
+      background: rgba(16, 24, 38, 0.91);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px;
+      backdrop-filter: blur(10px);
+    }
+    .label { color: var(--muted); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+    .value { font-size: 26px; font-weight: 700; margin-top: 8px; font-family: "IBM Plex Mono", monospace; }
+    .pulse { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: #556; }
+    .pulse.on { background: var(--green); box-shadow: 0 0 0 0 rgba(61, 214, 140, 0.6); animation: pulse 1.6s infinite; }
+    @keyframes pulse {
+      70% { box-shadow: 0 0 0 10px rgba(61, 214, 140, 0); }
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 500; }
+    .table-strategy-select { min-width: 148px; padding: 5px 7px; font-size: 12px; }
+    .table-save { margin-left: 5px; padding: 5px 8px; font-size: 11px; }
+    .table-save:disabled { opacity: 0.45; cursor: not-allowed; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 12px; }
+    .buy { background: rgba(61,214,140,0.15); color: var(--green); }
+    .sell { background: rgba(255,92,122,0.15); color: var(--red); }
+    .hold { background: #1b2433; color: var(--muted); }
+    .chart-shell { height: 280px; width: 100%; }
+    .chart-card .label { margin-bottom: 4px; }
+    .chart-last { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--muted); }
+    .market-command { display: grid; gap: 12px; margin-bottom: 12px; }
+    .section-heading {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 12px; margin-bottom: 10px;
+    }
+    .view-more {
+      padding: 4px 7px; font-size: 10px; color: #7db8ff;
+      background: rgba(78,161,255,.08); cursor: pointer;
+    }
+    .pulse-strip {
+      display: grid; grid-template-columns: repeat(10, minmax(105px, 1fr));
+      gap: 8px; overflow-x: auto; padding-bottom: 2px;
+    }
+    .pulse-tile {
+      min-width: 105px; padding: 9px; border: 1px solid var(--line);
+      border-radius: 8px; background: rgba(9,18,31,.86); cursor: pointer;
+    }
+    .pulse-price { font: 700 15px "IBM Plex Mono", monospace; margin-top: 5px; color: #fff; }
+    .market-hero-grid {
+      display: grid; grid-template-columns: 1.05fr repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .active-alert-card { min-height: 260px; }
+    .alert-stack { display: grid; gap: 8px; }
+    .alert-row {
+      display: grid; grid-template-columns: 1fr auto; gap: 8px;
+      padding: 10px; border-radius: 7px; background: #111d2d;
+      border-left: 3px solid var(--blue); cursor: pointer;
+    }
+    .alert-row.breakout { border-left-color: var(--green); background: rgba(61,214,140,.09); }
+    .alert-row.wait { border-left-color: var(--amber); }
+    .hero-market { min-height: 260px; cursor: pointer; overflow: hidden; }
+    .hero-market:hover, .summary-card:hover { border-color: rgba(78,161,255,.55); }
+    .market-title { display: flex; justify-content: space-between; gap: 8px; align-items: start; }
+    .market-price { font: 700 24px "IBM Plex Mono", monospace; margin-top: 8px; color: #fff; }
+    .market-change.up { color: var(--green); }
+    .market-change.down { color: var(--red); }
+    .sparkline { width: 100%; height: 135px; margin-top: 9px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .summary-card { min-height: 248px; }
+    .market-list { display: grid; gap: 4px; }
+    .market-list-row {
+      display: grid; grid-template-columns: minmax(0,1fr) auto auto;
+      align-items: center; gap: 8px; padding: 6px 0;
+      border-bottom: 1px solid rgba(28,39,56,.75); font-size: 11px;
+      cursor: pointer;
+    }
+    .market-list-row, .market-list-row span, .market-list-row strong,
+    .alert-row, .alert-row strong, .market-title h2 {
+      color: #fff !important;
+    }
+    .insight-grid {
+      display: grid; grid-template-columns: 1fr 1fr .75fr; gap: 12px;
+      margin-top: 12px;
+    }
+    .feed-empty {
+      min-height: 115px; display: grid; place-items: center; text-align: center;
+      color: #8ea1b9; border: 1px dashed #2a3a50; border-radius: 8px;
+      font-size: 12px; padding: 16px;
+    }
+    .sentiment-orbit {
+      width: 110px; height: 55px; margin: 18px auto 8px; overflow: hidden;
+      border-radius: 110px 110px 0 0;
+      background: conic-gradient(from 270deg at 50% 100%, var(--red), var(--amber), var(--green), transparent 0);
+      opacity: .35;
+    }
+    .detail-page {
+      position: fixed; inset: 0; z-index: 60; display: none;
+      overflow: auto; padding: 24px; background:
+        linear-gradient(rgba(5,11,20,.9), rgba(5,11,20,.96)),
+        url("/design-assets/market-command-mountain-landscape.png") center / cover fixed;
+    }
+    .detail-page.open { display: block; }
+    .detail-inner { max-width: 1180px; margin: 0 auto; }
+    #detailChart { height: 500px; margin-top: 14px; }
+    .detail-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 12px; }
+    .live-clock { font: 12px "IBM Plex Mono", monospace; color: #9fb1c8; }
+    @media (max-width: 1100px) {
+      .metrics, .two { grid-template-columns: 1fr 1fr; }
+      .market-hero-grid { grid-template-columns: 1fr 1fr; }
+      .summary-grid { grid-template-columns: 1fr 1fr; }
+      .insight-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 700px) {
+      .metrics, .two { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .app-frame { margin-left: 0; }
+      .market-hero-grid, .summary-grid, .insight-grid, .detail-stats { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="side-logo">MARKET <span>COMMAND</span></div>
+    <nav class="side-nav">
+      <a class="active" href="#marketCommand">⌂ &nbsp;Dashboard</a>
+      <a href="#inputCenter">＋ &nbsp;Stocks &amp; F&amp;O</a>
+      <a href="#activeAlerts">♢ &nbsp;Active Alerts</a>
+      <a href="#tradingDesk">⚙ &nbsp;Trading Desk</a>
+    </nav>
+    <div class="mountain-note">Good decisions come from clear information.</div>
+  </aside>
+  <div class="app-frame">
+  <header>
+    <div>
+      <div class="brand">AUTONOMOUS <span>AI HEDGE FUND</span></div>
+      <div class="label" style="margin-top:4px">Dhan NSE/MCX · Delta crypto derivatives</div>
+    </div>
+    <div class="controls">
+      <div class="tabs">
+        <button id="tabDhan" class="active" onclick="setDesk('dhan')">DHAN</button>
+        <button id="tabDelta" onclick="setDesk('delta')">DELTA</button>
+      </div>
+      <select id="intervalSelect">
+        <option value="30">30s</option>
+        <option value="60">1m</option>
+        <option value="300">5m</option>
+        <option value="1800">30m</option>
+        <option value="3600">1h</option>
+      </select>
+      <input id="riskInput" type="number" min="0.1" max="5" step="0.1" value="1.0" title="Risk % cash" />
+      <button id="engineButton" class="primary" onclick="toggleEngine()">Start Engine</button>
+      <span id="engineControlStatus" class="small" style="max-width:280px"></span>
+    </div>
+    <div class="live-clock" id="liveClock">IST --:--:--</div>
+  </header>
+
+  <main>
+    <section class="market-command" id="marketCommand">
+      <div class="card">
+        <div class="section-heading">
+          <div>
+            <div class="label">Market pulse</div>
+            <div class="small">Live prices · Indian indices · MCX · crypto</div>
+          </div>
+          <span class="chart-last" id="pulseUpdated">Connecting real feeds…</span>
+        </div>
+        <div class="pulse-strip" id="pulseStrip"></div>
+      </div>
+
+      <div class="market-hero-grid">
+        <div class="card active-alert-card" id="activeAlerts">
+          <div class="section-heading">
+            <div class="label">🔔 Active alerts <span class="badge sell" id="activeAlertCount">0</span></div>
+            <button class="view-more" onclick="document.getElementById('watchBody').scrollIntoView()">View all →</button>
+          </div>
+          <div class="alert-stack" id="activeAlertList">
+            <div class="feed-empty">Waiting for live breakout plans…</div>
+          </div>
+        </div>
+        <div class="card hero-market" id="hero-bitcoin" onclick="openMarketDetail('bitcoin')"></div>
+        <div class="card hero-market" id="hero-nifty" onclick="openMarketDetail('nifty')"></div>
+        <div class="card hero-market" id="hero-gold" onclick="openMarketDetail('gold')"></div>
+      </div>
+    </section>
+
+    <div class="grid metrics">
+      <div class="card">
+        <div class="label">Live equity</div>
+        <div class="value" id="equity">--</div>
+      </div>
+      <div class="card">
+        <div class="label">Engine</div>
+        <div class="value" style="display:flex;gap:10px;align-items:center">
+          <span class="pulse" id="statusIndicator"></span>
+          <span id="statusText">STANDBY</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">AI confidence</div>
+        <div class="value" id="confidence">0%</div>
+      </div>
+      <div class="card">
+        <div class="label">Confirmed fills</div>
+        <div class="value" id="fillCount">0</div>
+      </div>
+    </div>
+
+    <div class="grid two dhan-only" style="margin-top:12px">
+      <div class="card">
+        <div class="label">Decision intelligence</div>
+        <div style="margin:10px 0">
+          <span id="signalBadge" class="badge hold">HOLD</span>
+        </div>
+        <p id="aiLogic" style="color:var(--muted);line-height:1.5">Waiting for market analysis...</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <span class="badge hold" id="entryTag">ENTRY --</span>
+          <span class="badge hold" id="slTag">SL --</span>
+          <span class="badge hold" id="tpTag">TP --</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">Risk framework guardrails</div>
+        <p id="guardrails" style="color:var(--muted);line-height:1.6;font-size:13px">
+          Duplicate same-direction blocked. Opposite position closed before reversal.
+          ATR 1:2 stops, Rs 500 max risk per trade, five mixed slots (cash, F&O, commodity), capital split 5 ways. One name per bullish sector after 09:25 IST: first-5m break, retrace, then a completed 3m close above today's high. No repeat of a name after stop or target. After a 3m close above the 1:2 rung, stop locks there and the next target lifts 2R, max two extra rungs (1:4 then 1:6). Kill switch squares off the whole book at Rs 3000 day loss; profit square-off at Rs 5000. Confidence below threshold forces HOLD.
+          Learned auditor rules penalize matching setups.
+        </p>
+      </div>
+    </div>
+
+    <div class="card dhan-only" id="inputCenter" style="margin-top:12px">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <div>
+          <div class="label">Daily instrument input center</div>
+          <div class="small">Add NSE stocks, Nifty index options or MCX commodity options. Removal applies to the scanner, table and charts.</div>
+        </div>
+        <span id="inputStatus" class="chart-last">Ready</span>
+      </div>
+      <div class="row g-2 mt-1">
+        <div class="col-12 col-lg-2">
+          <input id="stockSymbolsInput" class="w-100" placeholder="Symbols: IDEA, LT, ADANIENT" />
+        </div>
+        <div class="col-12 col-lg-2">
+          <input id="stockCatalystInput" class="w-100" placeholder="Catalyst / reason (optional)" />
+        </div>
+        <div class="col-6 col-lg-2">
+          <select id="instrumentTypeInput" class="w-100" onchange="updateInstrumentPlaceholder()">
+            <option value="NSE:EQUITY">NSE stock</option>
+            <option value="NSE:INDEX">Nifty index (alert only)</option>
+            <option value="NSE:OPTIDX">Nifty CE / PE</option>
+            <option value="MCX:OPTFUT">MCX CALL / PUT</option>
+          </select>
+        </div>
+        <div class="col-6 col-lg-2">
+          <select id="stockStrategyInput" class="w-100">
+            <option value="breakout" selected>Breakout · previous candle SL</option>
+            <option value="range_breakout">2-hour range breakout · previous candle SL</option>
+            <option value="consolidation">Consolidation break</option>
+            <option value="trend_break">Trend break</option>
+          </select>
+        </div>
+        <div class="col-6 col-lg-2">
+          <select id="stockChaseInput" class="w-100">
+            <option value="low">Low chase risk</option>
+            <option value="medium" selected>Medium chase risk</option>
+            <option value="high">High chase risk</option>
+            <option value="very_high">Very high chase risk</option>
+          </select>
+        </div>
+        <div class="col-12 col-lg-2 d-flex gap-2">
+          <button class="primary flex-grow-1" onclick="addWatchlistStocks()">Add &amp; create</button>
+          <button class="danger" onclick="clearWatchlist()">Clear all</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid px-0 mt-3 dhan-only" id="tradingDesk">
+      <div class="d-flex justify-content-between align-items-baseline mb-2">
+        <div class="label">Live charts and 5-minute breakout alerts</div>
+        <div class="d-flex align-items-center gap-2">
+          <button id="alertButton" onclick="enableBreakoutAlerts()">Enable sound alerts</button>
+          <div id="chartMeta" class="chart-last">Loading today's IST session from Dhan…</div>
+        </div>
+      </div>
+      <div class="row g-3" id="chartGrid"></div>
+    </div>
+
+    <div class="card dhan-only" style="margin-top:12px">
+      <div class="label">Watchlist (5 slots, Rs 500, cash/F&O/MCX, 3m close after 09:25)</div>
+      <p id="watchMeta" style="color:var(--muted);font-size:13px">Manually added instruments use their selected strategy. Seasonal sector stocks remain separate and run in the background.</p>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th><th>Name</th><th>Symbol</th><th>Strategy</th><th>Setup</th>
+              <th>Entry</th><th>SL</th><th>TP</th><th>Qty</th><th>Note</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="watchBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card dhan-only" style="margin-top:12px">
+      <div class="label">Portfolio exposure</div>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticket</th><th>Symbol</th><th>Side</th><th>Qty</th>
+              <th>Price</th><th>SL</th><th>TP</th><th>uPnL</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="positionBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid two dhan-only" style="margin-top:12px">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div class="label">Self-learning desk</div>
+          <button id="auditButton" onclick="runAudit()">Run audit now</button>
+        </div>
+        <p id="auditStatus" style="color:var(--muted);font-size:13px;margin-top:8px">Last audit: none yet.</p>
+        <p class="label" style="margin-top:8px">Active rules: <span id="ruleCount">0</span></p>
+        <div style="overflow:auto;max-height:280px">
+          <table>
+            <thead>
+              <tr>
+                <th>Symbol</th><th>Pattern</th><th>Penalty</th><th>n</th><th>Evidence</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="rulesBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">Topology</div>
+        <canvas id="neuralCanvas"></canvas>
+      </div>
+    </div>
+
+    <section id="deltaPanel" class="delta-only" style="display:none">
+      <div class="grid two" style="margin-top:12px">
+        <div class="card">
+          <div class="label">Delta decision intelligence</div>
+          <p id="deltaMeta" style="font-size:13px;margin-top:8px">Independent paper derivatives desk.</p>
+          <p id="deltaLogic" style="font-size:13px">Waiting for Delta analysis…</p>
+          <button onclick="evaluateDeltaNow()">Evaluate now</button>
+          <button id="deltaKillButton" class="danger" onclick="toggleDeltaKill()">Kill switch</button>
+        </div>
+        <div class="card">
+          <div class="label">Open Delta structure</div>
+          <div id="deltaPosition" class="small" style="margin-top:10px">No open position</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <div class="d-flex flex-wrap justify-content-between gap-2">
+          <div>
+            <div class="label">Daily Delta instrument input center</div>
+            <div class="small">Eight liquid markets load by default. A checked BTC options row is approved only for the current IST date.</div>
+          </div>
+          <span id="deltaInputStatus" class="chart-last">Ready</span>
+        </div>
+        <div class="row g-2 mt-1">
+          <div class="col-12 col-lg-3"><input id="deltaSymbolInput" class="w-100" placeholder="BTCUSD, ETHUSD, SOLUSD" /></div>
+          <div class="col-6 col-lg-2">
+            <select id="deltaMarketInput" class="w-100">
+              <option value="options">Options</option>
+              <option value="futures">Futures / perpetual</option>
+            </select>
+          </div>
+          <div class="col-6 col-lg-4">
+            <select id="deltaStrategyInput" class="w-100">
+              <option value="auto_both">Automatic buy/sell strangle</option>
+              <option value="buy_straddle">Buy straddle</option>
+              <option value="buy_strangle">Buy strangle</option>
+              <option value="sell_straddle">Sell straddle</option>
+              <option value="sell_strangle">Sell strangle</option>
+            </select>
+          </div>
+          <div class="col-12 col-lg-3 d-flex gap-2">
+            <button class="primary flex-grow-1" onclick="addDeltaInstruments()">Add</button>
+            <button onclick="saveDeltaUniverse('Saved')">Save approvals</button>
+          </div>
+        </div>
+        <div style="overflow:auto;margin-top:10px">
+          <table>
+            <thead><tr><th>Trade today</th><th>Symbol</th><th>Market</th><th>Strategy</th><th>Execution</th><th></th></tr></thead>
+            <tbody id="deltaUniverseBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="container-fluid px-0 mt-3">
+        <div class="d-flex justify-content-between align-items-baseline mb-2">
+          <div class="label">Delta live 5-minute charts</div>
+          <div id="deltaChartMeta" class="chart-last">Loading Delta markets…</div>
+        </div>
+        <div class="row g-3" id="deltaChartGrid"></div>
+      </div>
+
+      <div class="grid two" style="margin-top:12px">
+        <div class="card">
+          <div class="label">Delta audit and active rules</div>
+          <div style="overflow:auto"><table>
+            <thead><tr><th>Rule</th><th>Value</th><th>Status</th></tr></thead>
+            <tbody id="deltaRulesBody"></tbody>
+          </table></div>
+        </div>
+        <div class="card">
+          <div class="label">Delta fills and decisions</div>
+          <div style="overflow:auto;max-height:300px"><table>
+            <thead><tr><th>Time</th><th>Asset</th><th>Signal</th><th>Logic</th></tr></thead>
+            <tbody id="deltaFillBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="card dhan-only" style="margin-top:12px">
+      <div class="label">Confirmed fills ledger</div>
+      <div style="overflow:auto;max-height:320px">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th><th>Symbol</th><th>Side</th><th>Fill</th>
+              <th>SL</th><th>TP</th><th>Qty</th><th>Risk %</th><th>Deal</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="fillBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+  </div>
+
+  <section class="detail-page" id="marketDetailPage">
+    <div class="detail-inner">
+      <button onclick="closeMarketDetail()">← Back to dashboard</button>
+      <div id="detailNav" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px"></div>
+      <div class="card" style="margin-top:12px">
+        <div class="market-title">
+          <div>
+            <div class="label" id="detailGroup">Market</div>
+            <h2 id="detailName" style="margin:7px 0 0">Instrument</h2>
+          </div>
+          <div style="text-align:right">
+            <div class="market-price" id="detailPrice">--</div>
+            <div class="market-change" id="detailChange">--</div>
+          </div>
+        </div>
+        <div id="detailChart"></div>
+        <div class="grid detail-stats">
+          <div class="card"><div class="label">Session high</div><div class="value" id="detailHigh">--</div></div>
+          <div class="card"><div class="label">Session low</div><div class="value" id="detailLow">--</div></div>
+          <div class="card"><div class="label">Session open</div><div class="value" id="detailOpen">--</div></div>
+          <div class="card"><div class="label">Last update</div><div class="value" id="detailUpdated" style="font-size:14px">--</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    let activeDesk = "dhan";
+    let engineRunning = false;
+    let latestTradeCount = 0;
+    let watchlistItems = [];
+    let deltaUniverseItems = [];
+    let deltaKillSwitch = false;
+    let breakoutAlertsEnabled = localStorage.getItem("breakoutAlertsEnabled") === "true";
+    const notifiedBreakouts = new Set();
+    const canvas = document.getElementById("neuralCanvas");
+    const ctx = canvas.getContext("2d");
+    const nodes = [];
+    let marketPulseData = null;
+    let detailChartView = null;
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+      }[char]));
+    }
+
+    function marketPrice(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return "--";
+      return number.toLocaleString(undefined, {
+        minimumFractionDigits: number < 100 ? 2 : 0,
+        maximumFractionDigits: number < 100 ? 4 : 2
+      });
+    }
+
+    function changeMarkup(value) {
+      const change = Number(value);
+      if (!Number.isFinite(change)) return `<span class="market-change">change n/a</span>`;
+      const tone = change >= 0 ? "up" : "down";
+      return `<span class="market-change ${tone}">${change >= 0 ? "+" : ""}${change.toFixed(2)}%</span>`;
+    }
+
+    function sparklineSvg(candles) {
+      const closes = (candles || []).slice(-70).map((bar) => Number(bar.close)).filter(Number.isFinite);
+      if (closes.length < 2) return `<div class="feed-empty" style="min-height:135px">Chart unavailable</div>`;
+      const min = Math.min(...closes);
+      const max = Math.max(...closes);
+      const spread = max - min || 1;
+      const points = closes.map((value, index) => {
+        const x = index / (closes.length - 1) * 260;
+        const y = 105 - ((value - min) / spread * 90);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(" ");
+      const rising = closes[closes.length - 1] >= closes[0];
+      const color = rising ? "#3dd68c" : "#ff5c7a";
+      return `<svg class="sparkline" viewBox="0 0 260 110" preserveAspectRatio="none" aria-hidden="true">
+        <defs><linearGradient id="fill-${rising ? "up" : "down"}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="${color}" stop-opacity=".28"/><stop offset="1" stop-color="${color}" stop-opacity="0"/>
+        </linearGradient></defs>
+        <polygon points="0,110 ${points} 260,110" fill="url(#fill-${rising ? "up" : "down"})"/>
+        <polyline points="${points}" fill="none" stroke="${color}" stroke-width="2"/>
+      </svg>`;
+    }
+
+    function allMarketRows() {
+      if (!marketPulseData) return [];
+      const rows = [
+        ...(marketPulseData.indices || []),
+        ...(marketPulseData.mcx || []),
+        ...(marketPulseData.crypto || [])
+      ];
+      return rows.filter(Boolean);
+    }
+
+    function renderHeroMarket(item) {
+      const host = document.getElementById(`hero-${item && item.key}`);
+      if (!host || !item) return;
+      host.innerHTML = `<div class="market-title">
+        <div><div class="label">${escapeHtml(item.name)}</div><div class="small">${escapeHtml(item.symbol)} · ${escapeHtml(item.price_label || "Price")}</div></div>
+        ${changeMarkup(item.change_pct)}
+      </div>
+      <div class="market-price">${marketPrice(item.last)}</div>
+      ${sparklineSvg(item.candles)}
+      <div class="small">Click for full market view →</div>`;
+    }
+
+    function renderMarketList(hostId, rows, emptyMessage) {
+      const host = document.getElementById(hostId);
+      if (!host) return;
+      if (!(rows || []).length) {
+        host.innerHTML = `<div class="feed-empty">${escapeHtml(emptyMessage)}</div>`;
+        return;
+      }
+      host.innerHTML = rows.slice(0, 8).map((item) => `
+        <div class="market-list-row" onclick="openMarketDetail('${escapeHtml(item.key)}')">
+          <span>${escapeHtml(item.name)}</span>
+          <strong>${marketPrice(item.last)}</strong>
+          ${changeMarkup(item.change_pct)}
+        </div>`).join("");
+    }
+
+    function renderMarketPulse(data) {
+      marketPulseData = data;
+      const rows = allMarketRows();
+      const strip = document.getElementById("pulseStrip");
+      strip.innerHTML = rows.slice(0, 10).map((item) => `
+        <div class="pulse-tile" onclick="openMarketDetail('${escapeHtml(item.key)}')">
+          <div class="label">${escapeHtml(item.short || item.name)}</div>
+          <div class="pulse-price">${marketPrice(item.last)}</div>
+          ${changeMarkup(item.change_pct)}
+        </div>`).join("");
+      (data.primary || []).filter(Boolean).forEach(renderHeroMarket);
+      const updated = data.generated_at ? new Date(data.generated_at).toLocaleTimeString() : "--";
+      document.getElementById("pulseUpdated").textContent = `Updated ${updated}`;
+    }
+
+    async function loadMarketPulse() {
+      try {
+        const response = await fetch("/api/market/pulse");
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "market feed unavailable");
+        renderMarketPulse(data);
+      } catch (error) {
+        document.getElementById("pulseUpdated").textContent = "Market pulse unavailable";
+      }
+    }
+
+    function renderActiveAlerts(watch) {
+      const host = document.getElementById("activeAlertList");
+      const active = (watch || [])
+        .filter((row) => row.entry != null && row.sl != null && row.tp != null)
+        .sort((a, b) => Number(b.alert_state === "BREAKOUT") - Number(a.alert_state === "BREAKOUT"))
+        .slice(0, 5);
+      document.getElementById("activeAlertCount").textContent =
+        (watch || []).filter((row) => row.alert_state === "BREAKOUT").length;
+      if (!active.length) {
+        host.innerHTML = `<div class="feed-empty">Waiting for live breakout plans…</div>`;
+        return;
+      }
+      host.innerHTML = active.map((row) => {
+        const state = row.alert_state === "BREAKOUT" ? "breakout" : "wait";
+        return `<div class="alert-row ${state}" onclick="document.getElementById('${chartDomId(row)}-col')?.scrollIntoView({behavior:'smooth'})">
+          <div><strong>${escapeHtml(row.symbol || row.name)}</strong>
+            <div class="small">${escapeHtml(row.reason || row.setup || "Monitoring")}</div>
+            <div class="small">Entry ${marketPrice(row.entry)} · SL ${marketPrice(row.sl)} · TP ${marketPrice(row.tp)}</div>
+          </div>
+          <span class="badge ${state === "breakout" ? "buy" : "hold"}">${state.toUpperCase()}</span>
+        </div>`;
+      }).join("");
+    }
+
+    function renderWatchSummary(watch) {
+      const rows = (watch || []).filter((row) => row.symbol || row.name).slice(0, 8);
+      const host = document.getElementById("watchMarketList");
+      host.innerHTML = rows.length ? rows.map((row) => `
+        <div class="market-list-row" onclick="document.getElementById('${chartDomId(row)}-col')?.scrollIntoView({behavior:'smooth'})">
+          <span>${escapeHtml(row.symbol || row.name)}</span>
+          <strong>${row.entry != null ? marketPrice(row.entry) : "--"}</strong>
+          <span class="market-change ${row.ok ? "up" : ""}">${row.ok ? "READY" : "WATCH"}</span>
+        </div>`).join("") : `<div class="feed-empty">Watchlist is empty</div>`;
+    }
+
+    function detailNavigation(rows) {
+      document.getElementById("detailNav").innerHTML = (rows || []).map((row) =>
+        `<button class="view-more" onclick="openMarketDetail('${escapeHtml(row.key)}')">${escapeHtml(row.name)}</button>`
+      ).join("");
+    }
+
+    function openMarketGroup(group) {
+      const rows = group === "crypto"
+        ? (marketPulseData || {}).crypto
+        : group === "mcx"
+          ? (marketPulseData || {}).mcx
+          : [];
+      if (rows && rows.length) openMarketDetail(rows[0].key, rows);
+    }
+
+    function openMarketDetail(key, navigationRows) {
+      const item = allMarketRows().find((row) => row.key === key);
+      if (!item) return;
+      const page = document.getElementById("marketDetailPage");
+      page.classList.add("open");
+      document.body.style.overflow = "hidden";
+      location.hash = `market-${key}`;
+      document.getElementById("detailGroup").textContent =
+        `${String(item.group || "market").toUpperCase()} · ${item.price_label || "Price"}`;
+      document.getElementById("detailName").textContent = item.name;
+      document.getElementById("detailPrice").textContent = marketPrice(item.last);
+      const change = Number(item.change_pct);
+      const changeNode = document.getElementById("detailChange");
+      changeNode.textContent = Number.isFinite(change) ? `${change >= 0 ? "+" : ""}${change.toFixed(2)}%` : "change n/a";
+      changeNode.className = `market-change ${change >= 0 ? "up" : "down"}`;
+      const candles = item.candles || [];
+      const highs = candles.map((bar) => Number(bar.high)).filter(Number.isFinite);
+      const lows = candles.map((bar) => Number(bar.low)).filter(Number.isFinite);
+      document.getElementById("detailHigh").textContent = highs.length ? marketPrice(Math.max(...highs)) : "--";
+      document.getElementById("detailLow").textContent = lows.length ? marketPrice(Math.min(...lows)) : "--";
+      document.getElementById("detailOpen").textContent = candles.length ? marketPrice(candles[0].open) : "--";
+      document.getElementById("detailUpdated").textContent =
+        (marketPulseData && marketPulseData.generated_at)
+          ? new Date(marketPulseData.generated_at).toLocaleString()
+          : "--";
+      const defaultNav = item.group === "crypto"
+        ? marketPulseData.crypto
+        : item.group === "mcx"
+          ? marketPulseData.mcx
+          : marketPulseData.indices;
+      detailNavigation(navigationRows || defaultNav);
+      const host = document.getElementById("detailChart");
+      if (detailChartView) {
+        try { detailChartView.remove(); } catch (error) {}
+        detailChartView = null;
+      }
+      host.innerHTML = "";
+      if (typeof LightweightCharts !== "undefined" && candles.length) {
+        detailChartView = LightweightCharts.createChart(host, {
+          layout: { background: { color: "rgba(8,17,29,.9)" }, textColor: "#dce7f5" },
+          grid: { vertLines: { color: "#17253a" }, horzLines: { color: "#17253a" } },
+          rightPriceScale: { borderColor: "#29405e" },
+          timeScale: nseTimeScaleOptions(),
+          width: host.clientWidth,
+          height: 500
+        });
+        const series = detailChartView.addCandlestickSeries({
+          upColor: "#3dd68c", downColor: "#ff5c7a", borderVisible: false,
+          wickUpColor: "#3dd68c", wickDownColor: "#ff5c7a"
+        });
+        series.setData(candles);
+        detailChartView.timeScale().fitContent();
+      }
+    }
+
+    function closeMarketDetail() {
+      document.getElementById("marketDetailPage").classList.remove("open");
+      document.body.style.overflow = "";
+      history.replaceState(null, "", location.pathname);
+    }
+
+    function updateLiveClock() {
+      document.getElementById("liveClock").textContent =
+        new Intl.DateTimeFormat("en-GB", {
+          timeZone: "Asia/Kolkata", weekday: "short", day: "2-digit",
+          month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit"
+        }).format(new Date()) + " IST";
+    }
+
+    async function enableBreakoutAlerts() {
+      if ("Notification" in window && Notification.permission === "default") {
+        await Notification.requestPermission();
+      }
+      breakoutAlertsEnabled = true;
+      localStorage.setItem("breakoutAlertsEnabled", "true");
+      document.getElementById("alertButton").textContent = "Alerts enabled";
+      playBreakoutTone();
+    }
+
+    function playBreakoutTone() {
+      try {
+        const audio = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audio.createOscillator();
+        const gain = audio.createGain();
+        oscillator.frequency.value = 880;
+        gain.gain.setValueAtTime(0.12, audio.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.45);
+        oscillator.connect(gain);
+        gain.connect(audio.destination);
+        oscillator.start();
+        oscillator.stop(audio.currentTime + 0.45);
+      } catch (error) {}
+    }
+
+    if (breakoutAlertsEnabled) {
+      document.getElementById("alertButton").textContent = "Alerts enabled";
+    }
+
+    function notifyBreakout(row) {
+      if (!breakoutAlertsEnabled || row.alert_state !== "BREAKOUT") return;
+      const key = `${row.symbol}|${row.trigger}|${row.prior_time}`;
+      if (notifiedBreakouts.has(key)) return;
+      notifiedBreakouts.add(key);
+      const volume = Number(row.volume_ratio_5m);
+      const volumeText = row.volume_ratio_5m != null && Number.isFinite(volume)
+        ? ` · volume ${volume.toFixed(2)}x`
+        : "";
+      const oi = Number(row.oi_change_pct);
+      const oiText = row.oi_change_pct != null && Number.isFinite(oi)
+        ? ` · OI ${oi.toFixed(1)}%`
+        : "";
+      const message = `Entry ${row.entry} · SL ${row.sl} · TP ${row.tp}${volumeText}${oiText}`;
+      playBreakoutTone();
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification(`${row.symbol} range breakout`, { body: message });
+      }
+    }
+
+    function setDesk(desk) {
+      activeDesk = desk;
+      document.getElementById("tabDhan").classList.toggle("active", desk === "dhan");
+      document.getElementById("tabDelta").classList.toggle("active", desk === "delta");
+      document.querySelectorAll(".dhan-only").forEach((node) => {
+        node.style.display = desk === "dhan" ? "" : "none";
+      });
+      document.querySelectorAll(".delta-only").forEach((node) => {
+        node.style.display = desk === "delta" ? "" : "none";
+      });
+      document.getElementById("riskInput").style.display = desk === "dhan" ? "" : "none";
+      latestTradeCount = 0;
+      pollBackend();
+      if (desk === "delta") {
+        refreshDeltaUniverse();
+        loadDeltaCharts();
+      } else {
+        loadCharts();
+      }
+    }
+
+    function resizeCanvas() {
+      canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
+      canvas.height = 180 * (window.devicePixelRatio || 1);
+      ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+    }
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    function spawn(trade) {
+      nodes.push({
+        x: Math.random() * canvas.clientWidth,
+        y: 30 + Math.random() * 120,
+        r: 4 + Math.random() * 6,
+        color: trade.signal === "BUY" ? "#3dd68c" : "#4ea1ff",
+        life: 1
+      });
+      if (nodes.length > 24) nodes.shift();
+    }
+    function animate() {
+      ctx.clearRect(0, 0, canvas.clientWidth, 180);
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const a = nodes[i], b = nodes[j];
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < 140) {
+            ctx.strokeStyle = "rgba(61,214,140,0.12)";
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          }
+        }
+      }
+      nodes.forEach((n) => {
+        ctx.fillStyle = n.color;
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
+        n.x += Math.sin(Date.now() / 900 + n.y) * 0.15;
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    function applyDhan(data) {
+      engineRunning = Boolean(data.is_running);
+      document.getElementById("statusText").textContent = engineRunning ? "RUNNING" : "STANDBY";
+      document.getElementById("statusIndicator").className = "pulse" + (engineRunning ? " on" : "");
+      document.getElementById("engineButton").textContent = engineRunning ? "Stop Engine" : "Start Engine";
+      const engineStatus = document.getElementById("engineControlStatus");
+      if (data.broker_error) {
+        engineStatus.textContent = "Dhan authentication unavailable";
+        engineStatus.style.color = "#ff5c7a";
+        engineStatus.title = data.broker_error;
+      } else if (engineRunning) {
+        engineStatus.textContent = data.paper_trade ? "Paper engine running" : "Live engine running";
+        engineStatus.style.color = "#3dd68c";
+        engineStatus.title = "";
+      } else {
+        engineStatus.textContent = "";
+        engineStatus.title = "";
+      }
+      const eq = Number(data.equity);
+      document.getElementById("equity").textContent = Number.isFinite(eq)
+        ? eq.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : "--";
+      document.getElementById("confidence").textContent = `${Number(data.last_confidence || 0)}%`;
+      document.getElementById("aiLogic").textContent = data.last_logic || "Waiting for market analysis...";
+      const sig = String(data.last_signal || "HOLD").toUpperCase();
+      const badge = document.getElementById("signalBadge");
+      badge.textContent = sig;
+      badge.className = "badge " + (sig === "BUY" ? "buy" : sig === "SELL" ? "sell" : "hold");
+      document.getElementById("entryTag").textContent = "ENTRY " + (data.last_entry_price ?? "--");
+      document.getElementById("slTag").textContent = "SL " + (data.last_stop_loss ?? "--");
+      document.getElementById("tpTag").textContent = "TP " + (data.last_take_profit ?? "--");
+      document.getElementById("fillCount").textContent = (data.trade_history || []).length;
+      if (data.interval) document.getElementById("intervalSelect").value = String(data.interval);
+      if (data.risk_percent) document.getElementById("riskInput").value = data.risk_percent;
+
+      const watch = data.watchlist || [];
+      window._watchRows = watch;
+      renderActiveAlerts(watch);
+      const watchBody = document.getElementById("watchBody");
+      if (watchBody) {
+        watchBody.innerHTML = "";
+        const executionMode = data.paper_trade
+          ? "PAPER"
+          : (data.trading_enabled ? "LIVE" : "BLOCKED");
+        const slotState = data.orders_placed
+          ? "Today’s manual and seasonal entry slots are complete; live entry/SL/TP monitoring continues."
+          : "Waiting for a valid manual or seasonal breakout.";
+        document.getElementById("watchMeta").textContent = data.catalyst_mode
+          ? `Manual strategy mode on. ${executionMode} · 5 mixed slots · Rs 500 · kill Rs 3000 · 1/sector after 09:25 · ${slotState}`
+          : "Catalyst mode off.";
+        watch.forEach((w) => {
+          notifyBreakout(w);
+          const tr = document.createElement("tr");
+          if (w.alert_state === "BREAKOUT") {
+            tr.style.background = w.volume_spike
+              ? "rgba(61,214,140,.16)"
+              : "rgba(78,161,255,.12)";
+          }
+          const volumeNote = w.volume_ratio_5m != null
+            ? `VOL ${Number(w.volume_ratio_5m).toFixed(2)}x${w.volume_spike ? " SPIKE" : ""}`
+            : "VOL n/a";
+          const oiNote = w.oi_change_pct != null
+            ? `OI ${Number(w.oi_change_pct).toFixed(1)}%${w.oi_spike ? " SPIKE" : ""}`
+            : (w.oi != null ? "OI baseline" : "OI n/a");
+          tr.innerHTML = `<td>${w.rank || ""}</td><td>${w.name || ""}</td>
+            <td>${w.symbol || ""}</td>`;
+          const strategyCell = document.createElement("td");
+          const strategySelect = document.createElement("select");
+          strategySelect.className = "table-strategy-select";
+          [
+            ["breakout", "Breakout · previous candle SL"],
+            ["range_breakout", "2-hour range breakout"],
+            ["consolidation", "Consolidation break"],
+            ["trend_break", "Trend break"]
+          ].forEach(([value, label]) => {
+            const option = document.createElement("option");
+            option.value = value;
+            option.textContent = label;
+            option.selected = String(w.strategy || "breakout") === value;
+            strategySelect.appendChild(option);
+          });
+          const saveStrategy = document.createElement("button");
+          saveStrategy.className = "table-save";
+          saveStrategy.textContent = "Save";
+          saveStrategy.disabled = true;
+          strategySelect.onchange = () => {
+            saveStrategy.disabled =
+              strategySelect.value === String(w.strategy || "breakout");
+            saveStrategy.textContent = "Save";
+          };
+          saveStrategy.onclick = () =>
+            saveInlineStrategy(w, strategySelect, saveStrategy);
+          strategyCell.appendChild(strategySelect);
+          strategyCell.appendChild(saveStrategy);
+          tr.appendChild(strategyCell);
+          tr.insertAdjacentHTML("beforeend", `
+            <td>${w.alert_state === "BREAKOUT" ? "BREAKOUT" : (w.setup || (w.ok ? "ready" : "wait"))}</td>
+            <td>${w.entry ?? ""}</td><td>${w.sl ?? ""}</td><td>${w.tp ?? ""}</td>
+            <td>${w.qty ?? ""}</td><td>${w.reason || w.catalyst || ""} · ${volumeNote} · ${oiNote}</td>`);
+          const action = document.createElement("td");
+          const remove = document.createElement("button");
+          remove.className = "danger";
+          remove.textContent = "Remove";
+          remove.onclick = () => removeWatchlistStock({
+            ...w,
+            symbol: w.input_symbol || w.symbol
+          });
+          action.appendChild(remove);
+          tr.appendChild(action);
+          watchBody.appendChild(tr);
+        });
+      }
+
+      const posBody = document.getElementById("positionBody");
+      posBody.innerHTML = "";
+      (data.open_positions || []).forEach((p) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${p.ticket || ""}</td><td>${p.symbol || ""}</td><td>${p.side || ""}</td>
+          <td>${p.volume || ""}</td><td>${p.price || ""}</td><td>${p.sl || ""}</td>
+          <td>${p.tp || ""}</td><td>${p.pnl || ""}</td>`;
+        const td = document.createElement("td");
+        const btn = document.createElement("button");
+        btn.className = "danger";
+        btn.textContent = "Close";
+        btn.onclick = () => closeTicket(p.ticket);
+        td.appendChild(btn);
+        tr.appendChild(td);
+        posBody.appendChild(tr);
+      });
+
+      const rulesBody = document.getElementById("rulesBody");
+      rulesBody.innerHTML = "";
+      const rules = data.learned_rules || [];
+      document.getElementById("ruleCount").textContent = rules.length;
+      if (data.last_audit_at && !document.getElementById("auditStatus").dataset.busy) {
+        document.getElementById("auditStatus").textContent = "Last audit: " + data.last_audit_at;
+      }
+      rules.slice(-20).reverse().forEach((r) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${r.affected_symbol || ""}</td><td>${r.setup || ""}</td>
+          <td>${r.confidence_reduction_points || ""}</td><td>${r.sample_size || ""}</td>
+          <td>${r.evidence || ""}</td><td>${r.status || "active"}</td>`;
+        rulesBody.appendChild(tr);
+      });
+
+      const fills = data.trade_history || [];
+      if (fills.length > latestTradeCount) {
+        fills.slice(latestTradeCount).forEach((t) => spawn(t));
+        latestTradeCount = fills.length;
+      }
+      const fillBody = document.getElementById("fillBody");
+      fillBody.innerHTML = "";
+      fills.slice().reverse().slice(0, 40).forEach((t) => {
+        const tr = document.createElement("tr");
+        const when = t.time ? new Date(t.time).toLocaleTimeString() : "--";
+        tr.innerHTML = `<td>${when}</td><td>${t.symbol || t.asset || ""}</td>
+          <td>${t.side || t.signal || ""}</td><td>${t.fill || ""}</td>
+          <td>${t.sl || ""}</td><td>${t.tp || ""}</td><td>${t.volume || ""}</td>
+          <td>${t.risk_percent || ""}</td><td>${t.deal || ""}</td><td>${t.status || ""}</td>`;
+        fillBody.appendChild(tr);
+      });
+    }
+
+    function applyDelta(data) {
+      engineRunning = Boolean(data.is_running);
+      deltaKillSwitch = Boolean(data.kill_switch);
+      document.getElementById("statusText").textContent = "DELTA " + (data.state || (engineRunning ? "RUN" : "STANDBY"));
+      document.getElementById("statusIndicator").className = "pulse" + (engineRunning ? " on" : "");
+      document.getElementById("engineButton").textContent = engineRunning ? "Stop Delta" : "Start Delta";
+      document.getElementById("equity").textContent = Number(data.equity || 0).toLocaleString();
+      document.getElementById("confidence").textContent = `${Number(data.last_confidence || 0)}%`;
+      document.getElementById("fillCount").textContent = (data.trade_history || []).length;
+      document.getElementById("deltaLogic").textContent = data.last_logic || "";
+      document.getElementById("deltaMeta").textContent =
+        `${data.mode || "PAPER"} | kill ${data.kill_switch ? "ON" : "off"} | spot ${data.spot || "--"}`;
+      document.getElementById("deltaKillButton").textContent =
+        data.kill_switch ? "Release kill switch" : "Kill switch";
+      const position = data.position;
+      document.getElementById("deltaPosition").textContent = position
+        ? `${position.side || ""} ${position.structure_name || "strangle"} · C${position.call_strike} / P${position.put_strike} · qty ${position.qty}`
+        : "No open position";
+      if (Array.isArray(data.universe)) {
+        deltaUniverseItems = data.universe;
+        renderDeltaUniverse();
+      }
+      const rulesBody = document.getElementById("deltaRulesBody");
+      rulesBody.innerHTML = "";
+      (data.rules || []).forEach((rule) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${rule.rule || ""}</td><td>${rule.value || ""}</td><td>${rule.status || ""}</td>`;
+        rulesBody.appendChild(tr);
+      });
+      const fills = document.getElementById("deltaFillBody");
+      fills.innerHTML = "";
+      (data.trade_history || []).slice().reverse().slice(0, 40).forEach((item) => {
+        const tr = document.createElement("tr");
+        const when = item.time ? new Date(item.time).toLocaleString() : "--";
+        tr.innerHTML = `<td>${when}</td><td>${item.asset || ""}</td><td>${item.signal || ""}</td><td>${item.logic || ""}</td>`;
+        fills.appendChild(tr);
+      });
+    }
+
+    async function pollBackend() {
+      try {
+        const url = activeDesk === "delta" ? "/api/delta/status" : "/api/status";
+        const response = await fetch(url);
+        const data = await response.json();
+        if (activeDesk === "delta") applyDelta(data);
+        else applyDhan(data);
+      } catch (error) {
+        console.warn(error);
+      }
+    }
+
+    async function toggleEngine() {
+      const interval = Number(document.getElementById("intervalSelect").value);
+      const risk = Number(document.getElementById("riskInput").value);
+      const endpoint = activeDesk === "delta" ? "/api/delta/control" : "/api/control";
+      const button = document.getElementById("engineButton");
+      const status = document.getElementById("engineControlStatus");
+      button.disabled = true;
+      status.textContent = engineRunning ? "Stopping…" : "Starting…";
+      status.style.color = "#ffffff";
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: engineRunning ? "stop" : "start",
+            is_running: !engineRunning,
+            interval,
+            risk_percent: risk
+          })
+        });
+        const data = await response.json();
+        if (!response.ok || data.success === false) {
+          throw new Error(data.error || "Engine request was rejected.");
+        }
+        status.textContent = engineRunning ? "Engine stopped" : "Engine started";
+        status.style.color = "#3dd68c";
+        await pollBackend();
+      } catch (error) {
+        status.textContent = error.message || String(error);
+        status.style.color = "#ff5c7a";
+        status.title = status.textContent;
+        if (activeDesk === "dhan") {
+          document.getElementById("aiLogic").textContent = status.textContent;
+        }
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function closeTicket(ticket) {
+      if (!confirm("Close position " + ticket + "?")) return;
+      await fetch("/api/close", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticket: String(ticket) })
+      });
+      pollBackend();
+    }
+
+    async function runAudit() {
+      const status = document.getElementById("auditStatus");
+      const btn = document.getElementById("auditButton");
+      status.dataset.busy = "1";
+      status.textContent = "Running audit (DeepSeek, up to ~90s)...";
+      if (btn) btn.disabled = true;
+      try {
+        const response = await fetch("/api/audit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ force: true })
+        });
+        const data = await response.json();
+        status.textContent = data.message || data.reason || (response.ok ? "Audit finished." : "Audit failed.");
+        await pollBackend();
+      } catch (error) {
+        status.textContent = "Audit request failed: " + error;
+      } finally {
+        delete status.dataset.busy;
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    function todayIst() {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(new Date());
+      const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+      return `${values.year}-${values.month}-${values.day}`;
+    }
+
+    function renderDeltaUniverse() {
+      const body = document.getElementById("deltaUniverseBody");
+      if (!body) return;
+      body.innerHTML = "";
+      deltaUniverseItems.forEach((item, index) => {
+        const tr = document.createElement("tr");
+        const approval = document.createElement("input");
+        approval.type = "checkbox";
+        approval.checked = Boolean(item.confirmed);
+        approval.disabled = !item.tradeable;
+        approval.title = item.tradeable
+          ? "Approve this BTC options strategy for today"
+          : "Chart only: current execution engine supports BTC options";
+        approval.onchange = async () => {
+          deltaUniverseItems[index].confirmed = approval.checked;
+          await saveDeltaUniverse(approval.checked ? "Approved for today" : "Approval removed");
+        };
+        const strategy = document.createElement("select");
+        [
+          ["auto_both", "Automatic buy/sell strangle"],
+          ["buy_straddle", "Buy straddle"],
+          ["buy_strangle", "Buy strangle"],
+          ["sell_straddle", "Sell straddle"],
+          ["sell_strangle", "Sell strangle"]
+        ].forEach(([value, label]) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          option.selected = item.strategy === value;
+          strategy.appendChild(option);
+        });
+        strategy.onchange = async () => {
+          deltaUniverseItems[index].strategy = strategy.value;
+          deltaUniverseItems[index].confirmed = false;
+          await saveDeltaUniverse("Strategy changed; reconfirm for today");
+        };
+        const remove = document.createElement("button");
+        remove.className = "danger";
+        remove.textContent = "Remove";
+        remove.onclick = async () => {
+          deltaUniverseItems.splice(index, 1);
+          await saveDeltaUniverse(`Removed ${item.symbol}`);
+        };
+        const approvalCell = document.createElement("td");
+        approvalCell.appendChild(approval);
+        const strategyCell = document.createElement("td");
+        strategyCell.appendChild(strategy);
+        const removeCell = document.createElement("td");
+        removeCell.appendChild(remove);
+        tr.appendChild(approvalCell);
+        [item.symbol, item.market].forEach((value) => {
+          const td = document.createElement("td");
+          td.textContent = value;
+          tr.appendChild(td);
+        });
+        tr.appendChild(strategyCell);
+        const access = document.createElement("td");
+        access.textContent = item.tradeable ? "BTC options engine" : "Charts only";
+        tr.appendChild(access);
+        tr.appendChild(removeCell);
+        body.appendChild(tr);
+      });
+    }
+
+    async function refreshDeltaUniverse() {
+      try {
+        const response = await fetch("/api/delta/universe");
+        const data = await response.json();
+        deltaUniverseItems = data.instruments || [];
+        renderDeltaUniverse();
+        document.getElementById("deltaInputStatus").textContent =
+          `${deltaUniverseItems.length} markets · approvals expire daily`;
+      } catch (error) {
+        document.getElementById("deltaInputStatus").textContent = "Load failed: " + error;
+      }
+    }
+
+    async function saveDeltaUniverse(message) {
+      const status = document.getElementById("deltaInputStatus");
+      status.textContent = "Saving…";
+      try {
+        const response = await fetch("/api/delta/universe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ instruments: deltaUniverseItems })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "save failed");
+        deltaUniverseItems = data.document.instruments || [];
+        renderDeltaUniverse();
+        status.textContent = message;
+        await loadDeltaCharts();
+      } catch (error) {
+        status.textContent = "Save failed: " + error;
+      }
+    }
+
+    async function addDeltaInstruments() {
+      const raw = document.getElementById("deltaSymbolInput").value.toUpperCase();
+      const symbols = raw.split(/[\s,;]+/).map((item) => item.trim()).filter(Boolean);
+      const market = document.getElementById("deltaMarketInput").value;
+      const strategy = document.getElementById("deltaStrategyInput").value;
+      const existing = new Set(deltaUniverseItems.map((item) => item.symbol));
+      symbols.forEach((symbol) => {
+        if (existing.has(symbol)) return;
+        deltaUniverseItems.push({ symbol, market, strategy, confirmed: false });
+        existing.add(symbol);
+      });
+      document.getElementById("deltaSymbolInput").value = "";
+      await saveDeltaUniverse("Markets added");
+    }
+
+    async function evaluateDeltaNow() {
+      await fetch("/api/delta/evaluate", { method: "POST" });
+      await pollBackend();
+    }
+
+    async function toggleDeltaKill() {
+      await fetch("/api/delta/control", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kill_switch: !deltaKillSwitch })
+      });
+      await pollBackend();
+    }
+
+    function watchKey(row) {
+      return [
+        row.exchange || "NSE",
+        row.instrument || "EQUITY",
+        row.symbol || row.name || ""
+      ].map((value) => String(value).trim().toUpperCase()).join(":");
+    }
+
+    function updateInstrumentPlaceholder() {
+      const input = document.getElementById("stockSymbolsInput");
+      const mode = document.getElementById("instrumentTypeInput").value;
+      if (mode === "NSE:OPTIDX") {
+        input.placeholder = "Example: NIFTY 15 SEP 25000 CE";
+      } else if (mode === "NSE:INDEX") {
+        input.placeholder = "NIFTY";
+      } else if (mode === "MCX:OPTFUT") {
+        input.placeholder = "Example: CRUDEOILM 17 SEP 9900 CALL";
+      } else {
+        input.placeholder = "Symbols: IDEA, LT, ADANIENT";
+      }
+    }
+
+    async function refreshInputCenter() {
+      try {
+        const response = await fetch("/api/watchlist");
+        const data = await response.json();
+        watchlistItems = data.names || [];
+        document.getElementById("inputStatus").textContent =
+          `${watchlistItems.length} instrument(s) saved`;
+      } catch (error) {
+        document.getElementById("inputStatus").textContent =
+          "Could not load list: " + error;
+      }
+    }
+
+    async function saveInputCenter(message) {
+      const status = document.getElementById("inputStatus");
+      status.textContent = "Saving...";
+      try {
+        const response = await fetch("/api/watchlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date: todayIst(), names: watchlistItems })
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || "save failed");
+        watchlistItems = (data.document && data.document.names) || [];
+        status.textContent = `${message} · ${watchlistItems.length} instrument(s) saved`;
+        await pollBackend();
+        await loadCharts();
+        return true;
+      } catch (error) {
+        status.textContent = "Save failed: " + error;
+        return false;
+      }
+    }
+
+    async function saveInlineStrategy(row, select, button) {
+      const target = {
+        ...row,
+        symbol: row.input_symbol || row.symbol || row.name
+      };
+      const key = watchKey(target);
+      let index = watchlistItems.findIndex((item) => watchKey(item) === key);
+      if (index < 0) {
+        await refreshInputCenter();
+        index = watchlistItems.findIndex((item) => watchKey(item) === key);
+      }
+      if (index < 0) {
+        button.textContent = "Not found";
+        button.disabled = false;
+        return;
+      }
+
+      const previous = watchlistItems[index].strategy || "breakout";
+      const next = select.value;
+      button.disabled = true;
+      button.textContent = "Saving…";
+      watchlistItems[index] = { ...watchlistItems[index], strategy: next };
+      const saved = await saveInputCenter(
+        `${row.name || row.symbol} strategy changed to ${select.options[select.selectedIndex].text}`
+      );
+      if (!saved) {
+        watchlistItems[index] = { ...watchlistItems[index], strategy: previous };
+        select.value = previous;
+        button.textContent = "Retry";
+        button.disabled = false;
+        return;
+      }
+      button.textContent = "Saved";
+      select.dataset.savedValue = next;
+    }
+
+    async function addWatchlistStocks() {
+      const input = document.getElementById("stockSymbolsInput");
+      const catalyst = document.getElementById("stockCatalystInput").value.trim();
+      const chase = document.getElementById("stockChaseInput").value;
+      const strategy = document.getElementById("stockStrategyInput").value || "breakout";
+      const [exchange, instrument] =
+        document.getElementById("instrumentTypeInput").value.split(":");
+      const raw = input.value.trim().toUpperCase();
+      const symbols = instrument === "EQUITY"
+        ? raw.split(/[\s,;]+/).map((value) => value.trim()).filter(Boolean)
+        : (raw ? [raw] : []);
+      if (!symbols.length) {
+        document.getElementById("inputStatus").textContent =
+          instrument === "EQUITY"
+            ? "Enter at least one NSE symbol."
+            : "Enter one complete option contract including expiry and strike.";
+        return;
+      }
+      const keys = new Set(watchlistItems.map(watchKey));
+      symbols.forEach((symbol) => {
+        const row = {
+          rank: watchlistItems.length + 1,
+          name: symbol,
+          symbol,
+          exchange,
+          instrument,
+          strategy,
+          catalyst,
+          chase_risk: chase
+        };
+        const key = watchKey(row);
+        if (keys.has(key)) return;
+        watchlistItems.push(row);
+        keys.add(key);
+      });
+      input.value = "";
+      document.getElementById("stockCatalystInput").value = "";
+      await saveInputCenter("Added");
+    }
+
+    async function removeWatchlistStock(row) {
+      const key = watchKey(row || {});
+      watchlistItems = watchlistItems.filter((row) => watchKey(row) !== key);
+      await saveInputCenter(`Removed ${(row && (row.symbol || row.name)) || ""}`);
+    }
+
+    async function clearWatchlist() {
+      if (!confirm("Remove every manually entered instrument from the scanner and charts?")) return;
+      watchlistItems = [];
+      await saveInputCenter("Cleared");
+    }
+
+    const chartViews = {};
+
+    function formatNseTime(time) {
+      const sec = typeof time === "number" ? time : Number(time && time.timestamp);
+      if (!Number.isFinite(sec)) return "";
+      return new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      }).format(new Date(sec * 1000));
+    }
+
+    function nseTimeScaleOptions() {
+      return {
+        borderColor: "#1c2738",
+        timeVisible: true,
+        secondsVisible: false,
+        tickMarkFormatter: (time) => formatNseTime(time)
+      };
+    }
+
+    function watchLevels() {
+      const map = {};
+      (window._watchRows || []).forEach((row) => {
+        [row.symbol, row.name, row.input_symbol].forEach((value) => {
+          const key = String(value || "").trim().toUpperCase();
+          if (key) map[key] = row;
+        });
+      });
+      return map;
+    }
+
+    function chartDomId(item) {
+      return "chart-" + String(item.symbol || item.name).replace(/[^A-Za-z0-9]/g, "");
+    }
+
+    function ensureChartCard(item) {
+      const id = chartDomId(item);
+      let col = document.getElementById(id + "-col");
+      if (!col) {
+        col = document.createElement("div");
+        col.className = "col-12 col-md-6 col-xl-3";
+        col.id = id + "-col";
+        col.innerHTML = `<div class="card chart-card h-100">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="label mb-0">${item.rank || ""}. ${item.symbol || item.name || ""}</div>
+            <div class="chart-last" id="${id}-last">--</div>
+          </div>
+          <div class="small text-secondary mb-1">${item.name || ""}</div>
+          <div class="small mb-1" id="${id}-levels">ENTRY -- · SL -- · TARGET --</div>
+          <div class="chart-shell" id="${id}"></div>
+        </div>`;
+        document.getElementById("chartGrid").appendChild(col);
+      }
+      return id;
+    }
+
+    function upsertChart(item, levels) {
+      const id = ensureChartCard(item);
+      const lastEl = document.getElementById(id + "-last");
+      if (lastEl) lastEl.textContent = item.last != null ? Number(item.last).toFixed(2) : (item.error || "no data");
+      const host = document.getElementById(id);
+      if (!host || typeof LightweightCharts === "undefined") return;
+      const candles = item.candles || [];
+      if (!chartViews[id]) {
+        const chart = LightweightCharts.createChart(host, {
+          layout: {
+            background: { color: "#101826" },
+            textColor: "#ffffff"
+          },
+          grid: {
+            vertLines: { color: "#1c2738" },
+            horzLines: { color: "#1c2738" }
+          },
+          rightPriceScale: { borderColor: "#1c2738" },
+          localization: {
+            timeFormatter: (time) => formatNseTime(time)
+          },
+          timeScale: nseTimeScaleOptions(),
+          width: host.clientWidth,
+          height: host.clientHeight || 280
+        });
+        const series = chart.addCandlestickSeries({
+          upColor: "#3dd68c",
+          downColor: "#ff5c7a",
+          borderVisible: false,
+          wickUpColor: "#3dd68c",
+          wickDownColor: "#ff5c7a"
+        });
+        const scaleBoundsOptions = {
+          color: "rgba(0,0,0,0)",
+          lineVisible: false,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false
+        };
+        const lowerBound = chart.addLineSeries(scaleBoundsOptions);
+        const upperBound = chart.addLineSeries(scaleBoundsOptions);
+        chartViews[id] = { chart, series, lowerBound, upperBound, lines: [] };
+        new ResizeObserver(() => {
+          chart.applyOptions({ width: host.clientWidth, height: host.clientHeight || 280 });
+        }).observe(host);
+      }
+      const view = chartViews[id];
+      view.chart.applyOptions({
+        localization: { timeFormatter: (time) => formatNseTime(time) },
+        timeScale: nseTimeScaleOptions()
+      });
+      if (candles.length) view.series.setData(candles);
+      const lvl =
+        levels[String(item.symbol || "").toUpperCase()] ||
+        levels[String(item.name || "").toUpperCase()] ||
+        {};
+      const levelEl = document.getElementById(id + "-levels");
+      if (levelEl) {
+        levelEl.innerHTML =
+          `<span style="color:#4ea1ff">ENTRY ${lvl.entry != null ? marketPrice(lvl.entry) : "--"}</span>` +
+          ` · <span style="color:#ff5c7a">SL ${lvl.sl != null ? marketPrice(lvl.sl) : "--"}</span>` +
+          ` · <span style="color:#3dd68c">TARGET ${lvl.tp != null ? marketPrice(lvl.tp) : "--"}</span>`;
+      }
+      (view.lines || []).forEach((line) => {
+        try { view.series.removePriceLine(line); } catch (e) {}
+      });
+      view.lines = [];
+      const levelDefinitions = [
+        [lvl.trigger, "#ffb547", "RANGE BREAK"],
+        [lvl.entry, "#4ea1ff", "ENTRY"],
+        [lvl.sl, "#ff5c7a", "SL"],
+        [lvl.tp, "#3dd68c", "TP"]
+      ];
+      levelDefinitions.forEach(([price, color, title]) => {
+        const value = Number(price);
+        if (!Number.isFinite(value) || value <= 0) return;
+        view.lines.push(view.series.createPriceLine({
+          price: value,
+          color,
+          lineWidth: 1,
+          lineStyle: 2,
+          axisLabelVisible: true,
+          title
+        }));
+      });
+      const protectedLevels = levelDefinitions
+        .map(([price]) => Number(price))
+        .filter((price) => Number.isFinite(price) && price > 0);
+      if (candles.length && protectedLevels.length) {
+        const visiblePrices = protectedLevels.concat(
+          candles.flatMap((bar) => [Number(bar.low), Number(bar.high)])
+            .filter((price) => Number.isFinite(price) && price > 0)
+        );
+        const low = Math.min(...visiblePrices);
+        const high = Math.max(...visiblePrices);
+        const padding = Math.max((high - low) * 0.06, high * 0.001);
+        const boundTime = candles[candles.length - 1].time;
+        view.lowerBound.setData([{ time: boundTime, value: low - padding }]);
+        view.upperBound.setData([{ time: boundTime, value: high + padding }]);
+      } else {
+        view.lowerBound.setData([]);
+        view.upperBound.setData([]);
+      }
+      if (typeof view.series.setMarkers === "function") {
+        const sources = (lvl.breakout_markers || []).slice();
+        if (!sources.length && lvl.alert_state === "BREAKOUT") {
+          sources.push(lvl);
+        }
+        const markers = sources.map((source) => {
+          const markerTime = Number(source.time || source.breakout_time);
+          const nearest = candles
+            .filter((bar) => Number(bar.time) <= markerTime)
+            .slice(-1)[0];
+          if (!nearest) return null;
+          const volume = Number(source.volume_ratio_5m);
+          const markerText = source.volume_ratio_5m != null && Number.isFinite(volume)
+            ? `BREAKOUT · VOL ${volume.toFixed(2)}x`
+            : "BREAKOUT";
+          return {
+            time: nearest.time,
+            position: "belowBar",
+            color: source.volume_spike ? "#3dd68c" : "#4ea1ff",
+            shape: "arrowUp",
+            text: markerText
+          };
+        }).filter(Boolean);
+        view.series.setMarkers(markers);
+      }
+    }
+
+    async function loadCharts() {
+      if (activeDesk !== "dhan") return;
+      const meta = document.getElementById("chartMeta");
+      try {
+        const response = await fetch("/api/charts");
+        const data = await response.json();
+        const charts = data.charts || [];
+        const levels = watchLevels();
+        meta.textContent = (data.ok ? "LIVE 1-min · NSE 09:15–15:30 IST · " : "Chart error · ") + charts.length + " names";
+        const visibleIds = new Set(charts.map(chartDomId));
+        Object.keys(chartViews).forEach((id) => {
+          if (visibleIds.has(id)) return;
+          try { chartViews[id].chart.remove(); } catch (error) {}
+          delete chartViews[id];
+          const col = document.getElementById(id + "-col");
+          if (col) col.remove();
+        });
+        Array.from(document.getElementById("chartGrid").children).forEach((col) => {
+          const id = String(col.id || "").replace(/-col$/, "");
+          if (!visibleIds.has(id)) col.remove();
+        });
+        charts.forEach((item) => upsertChart(item, levels));
+      } catch (error) {
+        if (meta) meta.textContent = "Charts failed: " + error;
+      }
+    }
+
+    const deltaChartViews = {};
+
+    function deltaChartDomId(item) {
+      return "delta-chart-" + String(item.symbol || "").replace(/[^A-Za-z0-9]/g, "");
+    }
+
+    function upsertDeltaChart(item) {
+      const id = deltaChartDomId(item);
+      let col = document.getElementById(id + "-col");
+      if (!col) {
+        col = document.createElement("div");
+        col.className = "col-12 col-md-6 col-xl-3";
+        col.id = id + "-col";
+        col.innerHTML = `<div class="card chart-card h-100">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="label mb-0">${item.symbol || ""}</div>
+            <div class="chart-last" id="${id}-last">--</div>
+          </div>
+          <div class="small mb-1">${item.market || ""} · ${item.strategy || ""}</div>
+          <div class="chart-shell" id="${id}"></div>
+        </div>`;
+        document.getElementById("deltaChartGrid").appendChild(col);
+      }
+      const last = document.getElementById(id + "-last");
+      if (last) {
+        last.textContent = item.last != null
+          ? Number(item.last).toLocaleString(undefined, { maximumFractionDigits: 8 })
+          : (item.error || "unsupported");
+      }
+      const host = document.getElementById(id);
+      if (!host || typeof LightweightCharts === "undefined") return;
+      if (!deltaChartViews[id]) {
+        const chart = LightweightCharts.createChart(host, {
+          layout: { background: { color: "#101826" }, textColor: "#ffffff" },
+          grid: {
+            vertLines: { color: "#1c2738" },
+            horzLines: { color: "#1c2738" }
+          },
+          rightPriceScale: { borderColor: "#1c2738" },
+          localization: { timeFormatter: (time) => formatNseTime(time) },
+          timeScale: nseTimeScaleOptions(),
+          width: host.clientWidth,
+          height: host.clientHeight || 280
+        });
+        const series = chart.addCandlestickSeries({
+          upColor: "#3dd68c",
+          downColor: "#ff5c7a",
+          borderVisible: false,
+          wickUpColor: "#3dd68c",
+          wickDownColor: "#ff5c7a"
+        });
+        deltaChartViews[id] = { chart, series };
+        new ResizeObserver(() => {
+          chart.applyOptions({ width: host.clientWidth, height: host.clientHeight || 280 });
+        }).observe(host);
+      }
+      if ((item.candles || []).length) {
+        deltaChartViews[id].series.setData(item.candles);
+      }
+    }
+
+    async function loadDeltaCharts() {
+      if (activeDesk !== "delta") return;
+      const meta = document.getElementById("deltaChartMeta");
+      try {
+        const response = await fetch("/api/delta/charts");
+        const data = await response.json();
+        const charts = data.charts || [];
+        meta.textContent = `${data.ok ? "LIVE" : "Chart error"} · 5-minute · 24/7 IST · ${charts.length} markets`;
+        const visible = new Set(charts.map(deltaChartDomId));
+        Object.keys(deltaChartViews).forEach((id) => {
+          if (visible.has(id)) return;
+          try { deltaChartViews[id].chart.remove(); } catch (error) {}
+          delete deltaChartViews[id];
+          const col = document.getElementById(id + "-col");
+          if (col) col.remove();
+        });
+        charts.forEach(upsertDeltaChart);
+      } catch (error) {
+        meta.textContent = "Delta charts failed: " + error;
+      }
+    }
+
+    pollBackend();
+    refreshInputCenter();
+    loadCharts();
+    loadMarketPulse();
+    updateLiveClock();
+    setInterval(updateLiveClock, 1000);
+    setInterval(() => {
+      if (!document.hidden) pollBackend();
+    }, 5000);
+    setInterval(() => {
+      if (!document.hidden) {
+        if (activeDesk === "delta") loadDeltaCharts();
+        else loadCharts();
+      }
+    }, 5000);
+    setInterval(() => {
+      if (!document.hidden) loadMarketPulse();
+    }, 120000);
+  </script>
+</body>
+</html>

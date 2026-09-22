@@ -1,0 +1,185 @@
+{
+  "date": "2026-09-22",
+  "names": [
+    {
+      "rank": 1,
+      "name": "REFEX",
+      "symbol": "REFEX",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 2,
+      "name": "WELCORP",
+      "symbol": "WELCORP",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 3,
+      "name": "MAZDOCK",
+      "symbol": "MAZDOCK",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 4,
+      "name": "PATANJALI",
+      "symbol": "PATANJALI",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 5,
+      "name": "WELENT",
+      "symbol": "WELENT",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 6,
+      "name": "RVNL",
+      "symbol": "RVNL",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 7,
+      "name": "GKCENERGY",
+      "symbol": "GKCENERGY",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 8,
+      "name": "PROTEIN",
+      "symbol": "PROTEIN",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 9,
+      "name": "OFSS",
+      "symbol": "OFSS",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 10,
+      "name": "LENSKART",
+      "symbol": "LENSKART",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 11,
+      "name": "GOKULDAS",
+      "symbol": "GOKULDAS",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 12,
+      "name": "DIXON",
+      "symbol": "DIXON",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 13,
+      "name": "GLENMARK",
+      "symbol": "GLENMARK",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 14,
+      "name": "KAYNES",
+      "symbol": "KAYNES",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 15,
+      "name": "VOLTAS",
+      "symbol": "VOLTAS",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 16,
+      "name": "NBCC",
+      "symbol": "NBCC",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 17,
+      "name": "AXISBANK",
+      "symbol": "AXISBANK",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    },
+    {
+      "rank": 18,
+      "name": "IPCALAB",
+      "symbol": "IPCALAB",
+      "exchange": "NSE",
+      "instrument": "EQUITY",
+      "strategy": "breakout",
+      "catalyst": "",
+      "chase_risk": "medium"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+.env
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.log
+.pytest_cache/
+.mypy_cache/
+.idea/
+.vscode/
+*.swp
+
+# Live state and broker dumps
+memory.json
+security_id_list.csv
+data/ohlc_cache/
+data/paper_session.json
+data/reports/
+
+# Large generated research dumps
+data/delta_btcusd_15m_1y.json
+data/delta_strategy_matrix_1y.json
+backtest_results_year.json

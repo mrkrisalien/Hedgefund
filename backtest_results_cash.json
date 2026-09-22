@@ -1,0 +1,1447 @@
+{
+  "generated_at": "2026-09-03T15:49:35.153137+05:30",
+  "segment": "cash",
+  "cash_segment_enabled": true,
+  "mcx_segment_enabled": true,
+  "strategy": "separate cash and MCX books: cash 0.4% risk, MCX 1 mini lot, same-book trade memory in the prompt, hourly ATR on commodities",
+  "window_start": "2026-08-04",
+  "window_end": "2026-09-03",
+  "starting_equity": 84060.57,
+  "ending_equity": 84060.06,
+  "total_pnl": -0.5,
+  "return_pct": -0.001,
+  "trades": 11,
+  "wins": 6,
+  "losses": 5,
+  "flats": 0,
+  "win_rate": 54.55,
+  "max_drawdown": -337.35,
+  "reward_ratio": 3.0,
+  "min_confidence": 75,
+  "cash_risk_pct": 0.004,
+  "mcx_lots": 1,
+  "one_metal": true,
+  "hourly_mcx_atr": true,
+  "mcx_mini": true,
+  "live_trading_enabled": false,
+  "by_symbol": [
+    {
+      "symbol": "BAJAJFINSV",
+      "trades": 1,
+      "pnl": -257.57
+    },
+    {
+      "symbol": "BRIGADE",
+      "trades": 1,
+      "pnl": 229.01
+    },
+    {
+      "symbol": "BTML",
+      "trades": 1,
+      "pnl": 82.34
+    },
+    {
+      "symbol": "DLF",
+      "trades": 1,
+      "pnl": -29.9
+    },
+    {
+      "symbol": "EICHERMOT",
+      "trades": 1,
+      "pnl": -94.0
+    },
+    {
+      "symbol": "HEROMOTOCO",
+      "trades": 1,
+      "pnl": -71.15
+    },
+    {
+      "symbol": "HINDALCO",
+      "trades": 1,
+      "pnl": 53.88
+    },
+    {
+      "symbol": "JINDALSTEL",
+      "trades": 1,
+      "pnl": 74.62
+    },
+    {
+      "symbol": "M&M",
+      "trades": 1,
+      "pnl": -50.76
+    },
+    {
+      "symbol": "NATIONALUM",
+      "trades": 1,
+      "pnl": 53.79
+    },
+    {
+      "symbol": "TORNTPHARM",
+      "trades": 1,
+      "pnl": 9.24
+    }
+  ],
+  "by_sector": [
+    {
+      "sector": "NIFTY AUTO",
+      "trades": 3,
+      "pnl": -215.91
+    },
+    {
+      "sector": "NIFTY FIN SERVICE",
+      "trades": 1,
+      "pnl": -257.57
+    },
+    {
+      "sector": "NIFTY IT",
+      "trades": 1,
+      "pnl": 82.34
+    },
+    {
+      "sector": "NIFTY METAL",
+      "trades": 3,
+      "pnl": 182.29
+    },
+    {
+      "sector": "NIFTY PHARMA",
+      "trades": 1,
+      "pnl": 9.24
+    },
+    {
+      "sector": "NIFTY REALTY",
+      "trades": 2,
+      "pnl": 199.11
+    }
+  ],
+  "by_kind": [
+    {
+      "book": "NSE_EQ",
+      "trades": 11,
+      "pnl": -0.5
+    }
+  ],
+  "exit_reasons": {
+    "EOD square-off": 11
+  },
+  "equity_curve": [
+    {
+      "date": "2026-08-04",
+      "equity": 84060.57
+    },
+    {
+      "date": "2026-08-04",
+      "equity": 84189.07
+    },
+    {
+      "date": "2026-08-05",
+      "equity": 83931.5
+    },
+    {
+      "date": "2026-08-06",
+      "equity": 83931.5
+    },
+    {
+      "date": "2026-08-07",
+      "equity": 84013.84
+    },
+    {
+      "date": "2026-08-10",
+      "equity": 83891.93
+    },
+    {
+      "date": "2026-08-11",
+      "equity": 83891.93
+    },
+    {
+      "date": "2026-08-12",
+      "equity": 83945.72
+    },
+    {
+      "date": "2026-08-13",
+      "equity": 83945.72
+    },
+    {
+      "date": "2026-08-14",
+      "equity": 83945.72
+    },
+    {
+      "date": "2026-08-17",
+      "equity": 83851.72
+    },
+    {
+      "date": "2026-08-18",
+      "equity": 83851.72
+    },
+    {
+      "date": "2026-08-19",
+      "equity": 83860.96
+    },
+    {
+      "date": "2026-08-20",
+      "equity": 83860.96
+    },
+    {
+      "date": "2026-08-21",
+      "equity": 83860.96
+    },
+    {
+      "date": "2026-08-24",
+      "equity": 84060.07
+    },
+    {
+      "date": "2026-08-25",
+      "equity": 84060.07
+    },
+    {
+      "date": "2026-08-26",
+      "equity": 84060.07
+    },
+    {
+      "date": "2026-08-27",
+      "equity": 84060.07
+    },
+    {
+      "date": "2026-08-28",
+      "equity": 84060.07
+    },
+    {
+      "date": "2026-08-31",
+      "equity": 84060.07
+    },
+    {
+      "date": "2026-09-01",
+      "equity": 84060.07
+    },
+    {
+      "date": "2026-09-02",
+      "equity": 84060.07
+    }
+  ],
+  "scan_log": [
+    {
+      "date": "2026-08-04",
+      "sectors": [
+        {
+          "sector": "NIFTY METAL",
+          "momentum": 0.457
+        },
+        {
+          "sector": "NIFTY ENERGY",
+          "momentum": -0.122
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "SAIL",
+          "sector": "NIFTY METAL",
+          "momentum": 1.902
+        },
+        {
+          "symbol": "HINDALCO",
+          "sector": "NIFTY METAL",
+          "momentum": 1.025
+        },
+        {
+          "symbol": "JINDALSTEL",
+          "sector": "NIFTY METAL",
+          "momentum": 0.768
+        },
+        {
+          "symbol": "ADANIGREEN",
+          "sector": "NIFTY ENERGY",
+          "momentum": 0.193
+        },
+        {
+          "symbol": "ONGC",
+          "sector": "NIFTY ENERGY",
+          "momentum": 0.178
+        }
+      ]
+    },
+    {
+      "date": "2026-08-05",
+      "sectors": [
+        {
+          "sector": "NIFTY REALTY",
+          "momentum": 0.879
+        },
+        {
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 0.149
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "GODREJPROP",
+          "sector": "NIFTY REALTY",
+          "momentum": 1.97
+        },
+        {
+          "symbol": "OBEROIRLTY",
+          "sector": "NIFTY REALTY",
+          "momentum": 1.162
+        },
+        {
+          "symbol": "PHOENIXLTD",
+          "sector": "NIFTY REALTY",
+          "momentum": 0.948
+        },
+        {
+          "symbol": "MUTHOOTFIN",
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 1.734
+        },
+        {
+          "symbol": "BAJFINANCE",
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 1.198
+        },
+        {
+          "symbol": "BAJAJFINSV",
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 0.447
+        }
+      ]
+    },
+    {
+      "date": "2026-08-06",
+      "sectors": [
+        {
+          "sector": "NIFTY IT",
+          "momentum": 0.163
+        },
+        {
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.045
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "BTML",
+          "sector": "NIFTY IT",
+          "momentum": 4.141
+        },
+        {
+          "symbol": "LTTS",
+          "sector": "NIFTY IT",
+          "momentum": 0.895
+        },
+        {
+          "symbol": "TECHM",
+          "sector": "NIFTY IT",
+          "momentum": 0.773
+        },
+        {
+          "symbol": "SUNPHARMA",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.917
+        },
+        {
+          "symbol": "CIPLA",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.513
+        },
+        {
+          "symbol": "BIOCON",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.21
+        }
+      ]
+    },
+    {
+      "date": "2026-08-07",
+      "sectors": [
+        {
+          "sector": "NIFTY IT",
+          "momentum": 1.207
+        },
+        {
+          "sector": "NIFTY AUTO",
+          "momentum": 0.796
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "BTML",
+          "sector": "NIFTY IT",
+          "momentum": 2.743
+        },
+        {
+          "symbol": "HCLTECH",
+          "sector": "NIFTY IT",
+          "momentum": 1.738
+        },
+        {
+          "symbol": "TCS",
+          "sector": "NIFTY IT",
+          "momentum": 1.663
+        },
+        {
+          "symbol": "HEROMOTOCO",
+          "sector": "NIFTY AUTO",
+          "momentum": 1.381
+        },
+        {
+          "symbol": "M&M",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.931
+        },
+        {
+          "symbol": "MARUTI",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.898
+        }
+      ]
+    },
+    {
+      "date": "2026-08-10",
+      "sectors": [
+        {
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.499
+        },
+        {
+          "sector": "NIFTY AUTO",
+          "momentum": 0.33
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "CIPLA",
+          "sector": "NIFTY PHARMA",
+          "momentum": 1.127
+        },
+        {
+          "symbol": "TORNTPHARM",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.883
+        },
+        {
+          "symbol": "SUNPHARMA",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.569
+        },
+        {
+          "symbol": "HEROMOTOCO",
+          "sector": "NIFTY AUTO",
+          "momentum": 2.116
+        },
+        {
+          "symbol": "BAJAJ-AUTO",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.643
+        },
+        {
+          "symbol": "M&M",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.331
+        }
+      ]
+    },
+    {
+      "date": "2026-08-11",
+      "sectors": [
+        {
+          "sector": "NIFTY IT",
+          "momentum": 0.344
+        },
+        {
+          "sector": "NIFTY AUTO",
+          "momentum": -0.054
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "LTTS",
+          "sector": "NIFTY IT",
+          "momentum": 1.225
+        },
+        {
+          "symbol": "HCLTECH",
+          "sector": "NIFTY IT",
+          "momentum": 0.926
+        },
+        {
+          "symbol": "WIPRO",
+          "sector": "NIFTY IT",
+          "momentum": 0.523
+        },
+        {
+          "symbol": "BOSCHLTD",
+          "sector": "NIFTY AUTO",
+          "momentum": 1.859
+        },
+        {
+          "symbol": "EICHERMOT",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.867
+        },
+        {
+          "symbol": "BAJAJ-AUTO",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.486
+        }
+      ]
+    },
+    {
+      "date": "2026-08-12",
+      "sectors": [
+        {
+          "sector": "NIFTY METAL",
+          "momentum": 0.452
+        },
+        {
+          "sector": "NIFTY AUTO",
+          "momentum": 0.065
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "NATIONALUM",
+          "sector": "NIFTY METAL",
+          "momentum": 4.028
+        },
+        {
+          "symbol": "HINDALCO",
+          "sector": "NIFTY METAL",
+          "momentum": 1.688
+        },
+        {
+          "symbol": "VEDL",
+          "sector": "NIFTY METAL",
+          "momentum": 1.231
+        },
+        {
+          "symbol": "BOSCHLTD",
+          "sector": "NIFTY AUTO",
+          "momentum": 1.143
+        },
+        {
+          "symbol": "BAJAJ-AUTO",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.605
+        },
+        {
+          "symbol": "BHARATFORG",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.531
+        }
+      ]
+    },
+    {
+      "date": "2026-08-13",
+      "sectors": [
+        {
+          "sector": "NIFTY AUTO",
+          "momentum": 0.151
+        },
+        {
+          "sector": "NIFTY FMCG",
+          "momentum": 0.045
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "BOSCHLTD",
+          "sector": "NIFTY AUTO",
+          "momentum": 1.043
+        },
+        {
+          "symbol": "M&M",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.687
+        },
+        {
+          "symbol": "MARUTI",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.072
+        },
+        {
+          "symbol": "TATACONSUM",
+          "sector": "NIFTY FMCG",
+          "momentum": 0.273
+        },
+        {
+          "symbol": "ITC",
+          "sector": "NIFTY FMCG",
+          "momentum": 0.163
+        },
+        {
+          "symbol": "BRITANNIA",
+          "sector": "NIFTY FMCG",
+          "momentum": 0.142
+        }
+      ]
+    },
+    {
+      "date": "2026-08-14",
+      "sectors": [
+        {
+          "sector": "NIFTY ENERGY",
+          "momentum": 0.142
+        },
+        {
+          "sector": "NIFTY PHARMA",
+          "momentum": -0.065
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "ADANIGREEN",
+          "sector": "NIFTY ENERGY",
+          "momentum": 0.607
+        },
+        {
+          "symbol": "ADANIPOWER",
+          "sector": "NIFTY ENERGY",
+          "momentum": 0.321
+        },
+        {
+          "symbol": "BPCL",
+          "sector": "NIFTY ENERGY",
+          "momentum": 0.095
+        },
+        {
+          "symbol": "BIOCON",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.478
+        },
+        {
+          "symbol": "DIVISLAB",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.165
+        },
+        {
+          "symbol": "AUROPHARMA",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.072
+        }
+      ]
+    },
+    {
+      "date": "2026-08-17",
+      "sectors": [
+        {
+          "sector": "NIFTY AUTO",
+          "momentum": 0.526
+        },
+        {
+          "sector": "NIFTY METAL",
+          "momentum": 0.09
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "EICHERMOT",
+          "sector": "NIFTY AUTO",
+          "momentum": 1.216
+        },
+        {
+          "symbol": "TVSMOTOR",
+          "sector": "NIFTY AUTO",
+          "momentum": 1.096
+        },
+        {
+          "symbol": "BOSCHLTD",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.945
+        },
+        {
+          "symbol": "HINDZINC",
+          "sector": "NIFTY METAL",
+          "momentum": 0.966
+        },
+        {
+          "symbol": "SAIL",
+          "sector": "NIFTY METAL",
+          "momentum": 0.961
+        },
+        {
+          "symbol": "HINDALCO",
+          "sector": "NIFTY METAL",
+          "momentum": 0.808
+        }
+      ]
+    },
+    {
+      "date": "2026-08-18",
+      "sectors": [
+        {
+          "sector": "NIFTY AUTO",
+          "momentum": 0.436
+        },
+        {
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.249
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "MARUTI",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.53
+        },
+        {
+          "symbol": "M&M",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.522
+        },
+        {
+          "symbol": "BOSCHLTD",
+          "sector": "NIFTY AUTO",
+          "momentum": 0.489
+        },
+        {
+          "symbol": "ALKEM",
+          "sector": "NIFTY PHARMA",
+          "momentum": 1.154
+        },
+        {
+          "symbol": "DIVISLAB",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.682
+        },
+        {
+          "symbol": "AUROPHARMA",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.423
+        }
+      ]
+    },
+    {
+      "date": "2026-08-19",
+      "sectors": [
+        {
+          "sector": "NIFTY FMCG",
+          "momentum": 0.338
+        },
+        {
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.263
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "MARICO",
+          "sector": "NIFTY FMCG",
+          "momentum": 1.17
+        },
+        {
+          "symbol": "NESTLEIND",
+          "sector": "NIFTY FMCG",
+          "momentum": 1.026
+        },
+        {
+          "symbol": "TATACONSUM",
+          "sector": "NIFTY FMCG",
+          "momentum": 0.499
+        },
+        {
+          "symbol": "SUNPHARMA",
+          "sector": "NIFTY PHARMA",
+          "momentum": 1.165
+        },
+        {
+          "symbol": "DRREDDY",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.657
+        },
+        {
+          "symbol": "TORNTPHARM",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.09
+        }
+      ]
+    },
+    {
+      "date": "2026-08-20",
+      "sectors": [
+        {
+          "sector": "NIFTY REALTY",
+          "momentum": 0.206
+        },
+        {
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 0.181
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "BRIGADE",
+          "sector": "NIFTY REALTY",
+          "momentum": 0.61
+        },
+        {
+          "symbol": "DLF",
+          "sector": "NIFTY REALTY",
+          "momentum": 0.289
+        },
+        {
+          "symbol": "OBEROIRLTY",
+          "sector": "NIFTY REALTY",
+          "momentum": 0.213
+        },
+        {
+          "symbol": "MUTHOOTFIN",
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 2.113
+        },
+        {
+          "symbol": "ICICIPRULI",
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 0.549
+        },
+        {
+          "symbol": "BAJFINANCE",
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 0.468
+        }
+      ]
+    },
+    {
+      "date": "2026-08-21",
+      "sectors": [
+        {
+          "sector": "NIFTY REALTY",
+          "momentum": 0.423
+        },
+        {
+          "sector": "NIFTY METAL",
+          "momentum": 0.041
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "PRESTIGE",
+          "sector": "NIFTY REALTY",
+          "momentum": 1.112
+        },
+        {
+          "symbol": "PHOENIXLTD",
+          "sector": "NIFTY REALTY",
+          "momentum": 0.639
+        },
+        {
+          "symbol": "GODREJPROP",
+          "sector": "NIFTY REALTY",
+          "momentum": 0.599
+        },
+        {
+          "symbol": "VEDL",
+          "sector": "NIFTY METAL",
+          "momentum": 1.628
+        },
+        {
+          "symbol": "HINDZINC",
+          "sector": "NIFTY METAL",
+          "momentum": 1.082
+        },
+        {
+          "symbol": "NMDC",
+          "sector": "NIFTY METAL",
+          "momentum": 0.428
+        }
+      ]
+    },
+    {
+      "date": "2026-08-24",
+      "sectors": [
+        {
+          "sector": "NIFTY IT",
+          "momentum": 0.83
+        },
+        {
+          "sector": "NIFTY REALTY",
+          "momentum": 0.671
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "HCLTECH",
+          "sector": "NIFTY IT",
+          "momentum": 1.374
+        },
+        {
+          "symbol": "INFY",
+          "sector": "NIFTY IT",
+          "momentum": 1.287
+        },
+        {
+          "symbol": "MPHASIS",
+          "sector": "NIFTY IT",
+          "momentum": 1.041
+        },
+        {
+          "symbol": "BRIGADE",
+          "sector": "NIFTY REALTY",
+          "momentum": 1.283
+        },
+        {
+          "symbol": "PHOENIXLTD",
+          "sector": "NIFTY REALTY",
+          "momentum": 0.772
+        },
+        {
+          "symbol": "DLF",
+          "sector": "NIFTY REALTY",
+          "momentum": 0.715
+        }
+      ]
+    },
+    {
+      "date": "2026-08-25",
+      "sectors": [
+        {
+          "sector": "NIFTY BANK",
+          "momentum": 0.253
+        },
+        {
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 0.19
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "ICICIBANK",
+          "sector": "NIFTY BANK",
+          "momentum": 0.618
+        },
+        {
+          "symbol": "PNB",
+          "sector": "NIFTY BANK",
+          "momentum": 0.45
+        },
+        {
+          "symbol": "KOTAKBANK",
+          "sector": "NIFTY BANK",
+          "momentum": 0.389
+        },
+        {
+          "symbol": "HDFCAMC",
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 0.697
+        },
+        {
+          "symbol": "SBILIFE",
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 0.352
+        },
+        {
+          "symbol": "HDFCLIFE",
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 0.182
+        }
+      ]
+    },
+    {
+      "date": "2026-08-26",
+      "sectors": [
+        {
+          "sector": "NIFTY REALTY",
+          "momentum": 0.38
+        },
+        {
+          "sector": "NIFTY BANK",
+          "momentum": 0.358
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "GODREJPROP",
+          "sector": "NIFTY REALTY",
+          "momentum": 1.455
+        },
+        {
+          "symbol": "PRESTIGE",
+          "sector": "NIFTY REALTY",
+          "momentum": 0.827
+        },
+        {
+          "symbol": "OBEROIRLTY",
+          "sector": "NIFTY REALTY",
+          "momentum": 0.334
+        },
+        {
+          "symbol": "ICICIBANK",
+          "sector": "NIFTY BANK",
+          "momentum": 1.426
+        },
+        {
+          "symbol": "BANKBARODA",
+          "sector": "NIFTY BANK",
+          "momentum": 0.831
+        },
+        {
+          "symbol": "PNB",
+          "sector": "NIFTY BANK",
+          "momentum": 0.445
+        }
+      ]
+    },
+    {
+      "date": "2026-08-27",
+      "sectors": [
+        {
+          "sector": "NIFTY IT",
+          "momentum": 0.467
+        },
+        {
+          "sector": "NIFTY FMCG",
+          "momentum": 0.184
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "TECHM",
+          "sector": "NIFTY IT",
+          "momentum": 1.33
+        },
+        {
+          "symbol": "COFORGE",
+          "sector": "NIFTY IT",
+          "momentum": 1.109
+        },
+        {
+          "symbol": "MPHASIS",
+          "sector": "NIFTY IT",
+          "momentum": 0.774
+        },
+        {
+          "symbol": "NESTLEIND",
+          "sector": "NIFTY FMCG",
+          "momentum": 0.675
+        },
+        {
+          "symbol": "ITC",
+          "sector": "NIFTY FMCG",
+          "momentum": 0.482
+        },
+        {
+          "symbol": "BRITANNIA",
+          "sector": "NIFTY FMCG",
+          "momentum": 0.442
+        }
+      ]
+    },
+    {
+      "date": "2026-08-28",
+      "sectors": [
+        {
+          "sector": "NIFTY IT",
+          "momentum": 1.406
+        },
+        {
+          "sector": "NIFTY METAL",
+          "momentum": 0.234
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "COFORGE",
+          "sector": "NIFTY IT",
+          "momentum": 2.245
+        },
+        {
+          "symbol": "TECHM",
+          "sector": "NIFTY IT",
+          "momentum": 1.981
+        },
+        {
+          "symbol": "PERSISTENT",
+          "sector": "NIFTY IT",
+          "momentum": 1.532
+        },
+        {
+          "symbol": "VEDL",
+          "sector": "NIFTY METAL",
+          "momentum": 1.392
+        },
+        {
+          "symbol": "NMDC",
+          "sector": "NIFTY METAL",
+          "momentum": 1.372
+        },
+        {
+          "symbol": "SAIL",
+          "sector": "NIFTY METAL",
+          "momentum": 1.342
+        }
+      ]
+    },
+    {
+      "date": "2026-08-31",
+      "sectors": [
+        {
+          "sector": "NIFTY BANK",
+          "momentum": 0.315
+        },
+        {
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 0.239
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "HDFCBANK",
+          "sector": "NIFTY BANK",
+          "momentum": 1.964
+        },
+        {
+          "symbol": "KOTAKBANK",
+          "sector": "NIFTY BANK",
+          "momentum": 0.475
+        },
+        {
+          "symbol": "ICICIBANK",
+          "sector": "NIFTY BANK",
+          "momentum": 0.337
+        },
+        {
+          "symbol": "RECLTD",
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 0.126
+        },
+        {
+          "symbol": "PFC",
+          "sector": "NIFTY FIN SERVICE",
+          "momentum": 0.043
+        }
+      ]
+    },
+    {
+      "date": "2026-09-01",
+      "sectors": [
+        {
+          "sector": "NIFTY METAL",
+          "momentum": 0.224
+        },
+        {
+          "sector": "NIFTY FMCG",
+          "momentum": -0.057
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "SAIL",
+          "sector": "NIFTY METAL",
+          "momentum": 2.041
+        },
+        {
+          "symbol": "COALINDIA",
+          "sector": "NIFTY METAL",
+          "momentum": 1.133
+        },
+        {
+          "symbol": "HINDALCO",
+          "sector": "NIFTY METAL",
+          "momentum": 0.704
+        },
+        {
+          "symbol": "ITC",
+          "sector": "NIFTY FMCG",
+          "momentum": 1.606
+        },
+        {
+          "symbol": "VBL",
+          "sector": "NIFTY FMCG",
+          "momentum": 1.521
+        },
+        {
+          "symbol": "MARICO",
+          "sector": "NIFTY FMCG",
+          "momentum": 0.996
+        }
+      ]
+    },
+    {
+      "date": "2026-09-02",
+      "sectors": [
+        {
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.415
+        },
+        {
+          "sector": "NIFTY BANK",
+          "momentum": -0.121
+        }
+      ],
+      "candidates": [
+        {
+          "symbol": "SUNPHARMA",
+          "sector": "NIFTY PHARMA",
+          "momentum": 1.45
+        },
+        {
+          "symbol": "AUROPHARMA",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.991
+        },
+        {
+          "symbol": "DIVISLAB",
+          "sector": "NIFTY PHARMA",
+          "momentum": 0.641
+        },
+        {
+          "symbol": "ICICIBANK",
+          "sector": "NIFTY BANK",
+          "momentum": 0.449
+        },
+        {
+          "symbol": "KOTAKBANK",
+          "sector": "NIFTY BANK",
+          "momentum": 0.415
+        },
+        {
+          "symbol": "AXISBANK",
+          "sector": "NIFTY BANK",
+          "momentum": 0.247
+        }
+      ]
+    }
+  ],
+  "trade_log": [
+    {
+      "entry_date": "2026-08-04",
+      "symbol": "HINDALCO",
+      "sector": "NIFTY METAL",
+      "kind": "NSE_EQ",
+      "momentum": 1.025,
+      "signal": "BUY",
+      "confidence": 75.0,
+      "entry": 1010.0,
+      "sl": 970.0,
+      "tp": 1130.0,
+      "exit": 1017.8,
+      "qty": 8,
+      "pnl": 53.88,
+      "costs": 8.52,
+      "reason": "EOD square-off",
+      "atr": 16.51,
+      "gate": "ok",
+      "logic": "Daily trend is bullish with higher highs and higher lows, closing near highs on strong volume. H1 momentum is positive with price above recent consolidation and opening range strength, supporting a long entry.",
+      "exit_time": "2026-08-04T09:44:00+00:00",
+      "equity_after": 84114.45
+    },
+    {
+      "entry_date": "2026-08-04",
+      "symbol": "JINDALSTEL",
+      "sector": "NIFTY METAL",
+      "kind": "NSE_EQ",
+      "momentum": 0.768,
+      "signal": "BUY",
+      "confidence": 75.0,
+      "entry": 1110.0,
+      "sl": 1070.0,
+      "tp": 1230.0,
+      "exit": 1120.5,
+      "qty": 8,
+      "pnl": 74.62,
+      "costs": 9.38,
+      "reason": "EOD square-off",
+      "atr": 24.48,
+      "gate": "ok",
+      "logic": "Daily trend is bullish with higher highs and higher lows, and the price is near recent highs. H1 momentum is positive with the opening range showing strength, supporting a long entry.",
+      "exit_time": "2026-08-04T09:44:00+00:00",
+      "equity_after": 84189.07
+    },
+    {
+      "entry_date": "2026-08-05",
+      "symbol": "BAJAJFINSV",
+      "sector": "NIFTY FIN SERVICE",
+      "kind": "NSE_EQ",
+      "momentum": 0.447,
+      "signal": "BUY",
+      "confidence": 75.0,
+      "entry": 2110.0,
+      "sl": 2070.0,
+      "tp": 2230.0,
+      "exit": 2080.0,
+      "qty": 8,
+      "pnl": -257.57,
+      "costs": 17.57,
+      "reason": "EOD square-off",
+      "atr": 45.97,
+      "gate": "ok",
+      "logic": "Daily trend is strongly bullish with higher highs and higher lows, closing at the high of the range. H1 momentum shows a pullback to support near 2080, and the opening momentum is positive, suggesting a continuation upward.",
+      "exit_time": "2026-08-05T09:44:00+00:00",
+      "equity_after": 83931.5
+    },
+    {
+      "entry_date": "2026-08-07",
+      "symbol": "BTML",
+      "sector": "NIFTY IT",
+      "kind": "NSE_EQ",
+      "momentum": 2.743,
+      "signal": "BUY",
+      "confidence": 80.0,
+      "entry": 7.0,
+      "sl": 3.0,
+      "tp": 19.0,
+      "exit": 8.0,
+      "qty": 83,
+      "pnl": 82.34,
+      "costs": 0.66,
+      "reason": "EOD square-off",
+      "atr": 0.58,
+      "gate": "ok",
+      "logic": "Daily trend is bullish with a strong breakout on high volume, and H1 momentum confirms sustained buying with higher lows and closes above prior resistance. Opening momentum is positive, supporting a long intraday setup.",
+      "exit_time": "2026-08-07T09:59:00+00:00",
+      "equity_after": 84013.83
+    },
+    {
+      "entry_date": "2026-08-10",
+      "symbol": "HEROMOTOCO",
+      "sector": "NIFTY AUTO",
+      "kind": "NSE_EQ",
+      "momentum": 2.116,
+      "signal": "BUY",
+      "confidence": 80.0,
+      "entry": 5900.0,
+      "sl": 5700.0,
+      "tp": 6500.0,
+      "exit": 5835.0,
+      "qty": 1,
+      "pnl": -71.15,
+      "costs": 6.15,
+      "reason": "EOD square-off",
+      "atr": 150.41,
+      "gate": "ok",
+      "logic": "Daily trend is strongly bullish with higher highs and higher lows, closing near highs on rising volume. H1 momentum is positive with a strong recovery from the low and sustained buying, supporting a long entry.",
+      "exit_time": "2026-08-10T09:44:00+00:00",
+      "equity_after": 83942.68
+    },
+    {
+      "entry_date": "2026-08-10",
+      "symbol": "M&M",
+      "sector": "NIFTY AUTO",
+      "kind": "NSE_EQ",
+      "momentum": 0.331,
+      "signal": "BUY",
+      "confidence": 78.0,
+      "entry": 3520.0,
+      "sl": 3450.0,
+      "tp": 3720.0,
+      "exit": 3511.0,
+      "qty": 4,
+      "pnl": -50.76,
+      "costs": 14.76,
+      "reason": "EOD square-off",
+      "atr": 88.9,
+      "gate": "ok",
+      "logic": "Daily trend is bullish with higher highs and higher lows, closing near highs. H1 momentum is positive with recent gains and price above key levels, supporting a long entry.",
+      "exit_time": "2026-08-10T09:44:00+00:00",
+      "equity_after": 83891.92
+    },
+    {
+      "entry_date": "2026-08-12",
+      "symbol": "NATIONALUM",
+      "sector": "NIFTY METAL",
+      "kind": "NSE_EQ",
+      "momentum": 4.028,
+      "signal": "BUY",
+      "confidence": 78.0,
+      "entry": 415.0,
+      "sl": 395.0,
+      "tp": 475.0,
+      "exit": 418.8,
+      "qty": 16,
+      "pnl": 53.79,
+      "costs": 7.01,
+      "reason": "EOD square-off",
+      "atr": 9.58,
+      "gate": "ok",
+      "logic": "Daily trend is bullish with higher highs and higher lows, and the price is above key moving averages. H1 momentum shows a strong opening surge and recent recovery, supporting a long entry.",
+      "exit_time": "2026-08-12T09:44:00+00:00",
+      "equity_after": 83945.71
+    },
+    {
+      "entry_date": "2026-08-17",
+      "symbol": "EICHERMOT",
+      "sector": "NIFTY AUTO",
+      "kind": "NSE_EQ",
+      "momentum": 1.216,
+      "signal": "BUY",
+      "confidence": 75.0,
+      "entry": 8150.0,
+      "sl": 7950.0,
+      "tp": 8750.0,
+      "exit": 8064.5,
+      "qty": 1,
+      "pnl": -94.0,
+      "costs": 8.5,
+      "reason": "EOD square-off",
+      "atr": 142.46,
+      "gate": "ok",
+      "logic": "Daily trend is bullish with higher highs and higher lows, and price is near recent highs. H1 momentum is positive with a strong opening range, supporting a long entry.",
+      "exit_time": "2026-08-17T09:44:00+00:00",
+      "equity_after": 83851.71
+    },
+    {
+      "entry_date": "2026-08-19",
+      "symbol": "TORNTPHARM",
+      "sector": "NIFTY PHARMA",
+      "kind": "NSE_EQ",
+      "momentum": 0.09,
+      "signal": "BUY",
+      "confidence": 78.0,
+      "entry": 5000.0,
+      "sl": 4800.0,
+      "tp": 5600.0,
+      "exit": 5014.5,
+      "qty": 1,
+      "pnl": 9.24,
+      "costs": 5.26,
+      "reason": "EOD square-off",
+      "atr": 118.81,
+      "gate": "ok",
+      "logic": "Daily trend is turning up with higher lows and a strong bullish close on 2026-08-17, while H1 momentum shows a clear breakout above 4980 with sustained buying. The opening range momentum is positive, supporting a long entry in line with the trend.",
+      "exit_time": "2026-08-19T09:44:00+00:00",
+      "equity_after": 83860.95
+    },
+    {
+      "entry_date": "2026-08-24",
+      "symbol": "BRIGADE",
+      "sector": "NIFTY REALTY",
+      "kind": "NSE_EQ",
+      "momentum": 1.283,
+      "signal": "BUY",
+      "confidence": 82.0,
+      "entry": 645.0,
+      "sl": 625.0,
+      "tp": 705.0,
+      "exit": 660.0,
+      "qty": 16,
+      "pnl": 229.01,
+      "costs": 10.99,
+      "reason": "EOD square-off",
+      "atr": 20.66,
+      "gate": "ok",
+      "logic": "Daily trend is strongly bullish with a breakout above 630 and higher highs, while H1 momentum shows sustained buying with higher lows and a close near highs. Opening momentum of 1.28% confirms intraday strength, supporting a long entry with a 1:3 risk-reward setup.",
+      "exit_time": "2026-08-24T09:59:00+00:00",
+      "equity_after": 84089.96
+    },
+    {
+      "entry_date": "2026-08-24",
+      "symbol": "DLF",
+      "sector": "NIFTY REALTY",
+      "kind": "NSE_EQ",
+      "momentum": 0.715,
+      "signal": "BUY",
+      "confidence": 75.0,
+      "entry": 685.0,
+      "sl": 665.0,
+      "tp": 745.0,
+      "exit": 683.85,
+      "qty": 16,
+      "pnl": -29.9,
+      "costs": 11.5,
+      "reason": "EOD square-off",
+      "atr": 16.71,
+      "gate": "ok",
+      "logic": "Daily trend is bullish with higher highs and higher lows, and price is near recent highs. H1 momentum is positive with a recent pullback to support, offering a long entry with favorable risk-reward.",
+      "exit_time": "2026-08-24T09:44:00+00:00",
+      "equity_after": 84060.06
+    }
+  ],
+  "go_live_recommendation": "Do not enable live trading"
+}

@@ -1,0 +1,77 @@
+{
+  "date": "2026-09-20",
+  "instruments": [
+    {
+      "rank": 1,
+      "symbol": "BTCUSD",
+      "market": "options",
+      "strategy": "auto_both",
+      "confirmed": false,
+      "confirmed_date": "",
+      "tradeable": true
+    },
+    {
+      "rank": 2,
+      "symbol": "ETHUSD",
+      "market": "options",
+      "strategy": "buy_strangle",
+      "confirmed": false,
+      "confirmed_date": "",
+      "tradeable": false
+    },
+    {
+      "rank": 3,
+      "symbol": "SOLUSD",
+      "market": "futures",
+      "strategy": "auto_both",
+      "confirmed": false,
+      "confirmed_date": "",
+      "tradeable": false
+    },
+    {
+      "rank": 4,
+      "symbol": "XRPUSD",
+      "market": "futures",
+      "strategy": "auto_both",
+      "confirmed": false,
+      "confirmed_date": "",
+      "tradeable": false
+    },
+    {
+      "rank": 5,
+      "symbol": "BNBUSD",
+      "market": "futures",
+      "strategy": "auto_both",
+      "confirmed": false,
+      "confirmed_date": "",
+      "tradeable": false
+    },
+    {
+      "rank": 6,
+      "symbol": "DOGEUSD",
+      "market": "futures",
+      "strategy": "auto_both",
+      "confirmed": false,
+      "confirmed_date": "",
+      "tradeable": false
+    },
+    {
+      "rank": 7,
+      "symbol": "ADAUSD",
+      "market": "futures",
+      "strategy": "auto_both",
+      "confirmed": false,
+      "confirmed_date": "",
+      "tradeable": false
+    },
+    {
+      "rank": 8,
+      "symbol": "AVAXUSD",
+      "market": "futures",
+      "strategy": "auto_both",
+      "confirmed": false,
+      "confirmed_date": "",
+      "tradeable": false
+    }
+  ]
+}

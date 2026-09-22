@@ -1,0 +1,87 @@
+{
+  "summary": {
+    "hypothesis": "Dynamic same-day BTC long strangle plus optional BTCUSD perp",
+    "closed_option_roundtrips": 11,
+    "btc_strangle_cycles": 3,
+    "equal_qty_cycles": 3,
+    "median_entry_gap_seconds": 4.08,
+    "median_hold_minutes": 78.1,
+    "median_wing_pct": 2.025,
+    "common_exit_clock_minutes": {
+      "0": 8,
+      "30": 3
+    },
+    "perp_roundtrips": 0,
+    "confidence": {
+      "same_expiry_call_put": 0.82,
+      "near_simultaneous_legs": 0.88,
+      "scheduled_reassessment": 0.74,
+      "atr_style_wings": 0.61,
+      "equal_qty": 0.55,
+      "independent_perp": 0.7
+    },
+    "mean_reconstructed_score": 93.33333333333333,
+    "pct_simultaneous_legs": 100.0,
+    "pct_equal_qty": 100.0,
+    "median_hold_minutes_cycles": 78.1
+  },
+  "cycles": [
+    {
+      "TRADE_ID": "STRANGLE-001",
+      "ENTRY_TIME": "2026-08-26T11:42:04.413317+05:30",
+      "EXIT_TIME": "2026-08-26T13:00:08.877231+05:30",
+      "BTC_PRICE_AT_ENTRY": 79000.0,
+      "CALL_STRIKE": 79800,
+      "PUT_STRIKE": 78200,
+      "CALL_PREMIUM": 49.0,
+      "PUT_PREMIUM": 37.0,
+      "QUANTITY": 1.0,
+      "STRIKE_DISTANCE_PERCENTAGE": 2.025,
+      "HOLDING_TIME": 78.1,
+      "REALIZED_PNL": 0.0,
+      "RECONSTRUCTED_SIGNAL_SCORE": 90,
+      "entry_gap_seconds": 4.08,
+      "qty_equal": true,
+      "hypothesized_wing_pct_proxy": 2.4,
+      "scheduled_hold_hint": false
+    },
+    {
+      "TRADE_ID": "STRANGLE-002",
+      "ENTRY_TIME": "2026-08-26T11:42:04.413317+05:30",
+      "EXIT_TIME": "2026-08-26T14:00:09.033064+05:30",
+      "BTC_PRICE_AT_ENTRY": 79000.0,
+      "CALL_STRIKE": 79800,
+      "PUT_STRIKE": 78200,
+      "CALL_PREMIUM": 49.0,
+      "PUT_PREMIUM": 37.0,
+      "QUANTITY": 1.0,
+      "STRIKE_DISTANCE_PERCENTAGE": 2.025,
+      "HOLDING_TIME": 123.1,
+      "REALIZED_PNL": 0.0,
+      "RECONSTRUCTED_SIGNAL_SCORE": 100,
+      "entry_gap_seconds": 4.08,
+      "qty_equal": true,
+      "hypothesized_wing_pct_proxy": 2.4,
+      "scheduled_hold_hint": true
+    },
+    {
+      "TRADE_ID": "STRANGLE-003",
+      "ENTRY_TIME": "2026-08-27T12:00:58.218759+05:30",
+      "EXIT_TIME": "2026-08-27T13:00:09.403056+05:30",
+      "BTC_PRICE_AT_ENTRY": 78800.0,
+      "CALL_STRIKE": 79600,
+      "PUT_STRIKE": 78000,
+      "CALL_PREMIUM": 33.0,
+      "PUT_PREMIUM": 20.0,
+      "QUANTITY": 1.0,
+      "STRIKE_DISTANCE_PERCENTAGE": 2.03,
+      "HOLDING_TIME": 59.2,
+      "REALIZED_PNL": 0.0,
+      "RECONSTRUCTED_SIGNAL_SCORE": 90,
+      "entry_gap_seconds": 3.17,
+      "qty_equal": true,
+      "hypothesized_wing_pct_proxy": 2.4,
+      "scheduled_hold_hint": false
+    }
+  ]
+}

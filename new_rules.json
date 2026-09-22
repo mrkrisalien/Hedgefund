@@ -1,0 +1,231 @@
+{
+  "rules": [
+    {
+      "affected_symbol": "ALL",
+      "setup": "Low-volume breakdown/breakout",
+      "confidence_reduction_points": 20,
+      "sample_size": 3,
+      "evidence": "Multiple losing trades on low relative volume indicate false breakouts.",
+      "status": "active",
+      "created_at": "2026-09-09T10:00:19.713474+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "Overextended ATR volatility trap",
+      "confidence_reduction_points": 20,
+      "sample_size": 3,
+      "evidence": "High ATR values on entries suggest chasing extended moves leading to reversals.",
+      "status": "active",
+      "created_at": "2026-09-09T10:00:19.713474+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "Adverse cross-asset correlation",
+      "confidence_reduction_points": 20,
+      "sample_size": 3,
+      "evidence": "Losses cluster in realty and energy sectors suggesting correlated adverse moves.",
+      "status": "active",
+      "created_at": "2026-09-09T10:00:19.713474+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "Low-volume breakdown/breakout",
+      "confidence_reduction_points": 20,
+      "sample_size": 3,
+      "evidence": "Multiple losing trades on low relative volume indicate false breakouts/breakdowns.",
+      "status": "active",
+      "created_at": "2026-09-09T10:00:47.804510+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "Overextended ATR volatility trap",
+      "confidence_reduction_points": 20,
+      "sample_size": 3,
+      "evidence": "High ATR values on losing trades suggest entries during volatility spikes that revert.",
+      "status": "active",
+      "created_at": "2026-09-09T10:00:47.804510+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "Adverse cross-asset correlation",
+      "confidence_reduction_points": 20,
+      "sample_size": 3,
+      "evidence": "Losses cluster in realty and energy sectors, implying correlated adverse moves.",
+      "status": "active",
+      "created_at": "2026-09-09T10:00:47.804510+00:00"
+    },
+    {
+      "affected_symbol": "AUROPHARMA",
+      "setup": "low-volume breakout",
+      "confidence_reduction_points": 20,
+      "sample_size": 3,
+      "evidence": "Entry on a BUY breakout with only 1.06x hourly relative volume failed to sustain, reversing to a -0.5% loss as the move lacked participation.",
+      "status": "active",
+      "created_at": "2026-09-10T03:39:03.923228+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "low-volume breakdown/breakout",
+      "confidence_reduction_points": 25,
+      "sample_size": 20,
+      "evidence": "All 20 losing trades are BUY entries that immediately reversed, consistent with breakouts lacking relative-volume confirmation.",
+      "status": "active",
+      "created_at": "2026-09-10T03:39:25.280698+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "overextended ATR volatility trap",
+      "confidence_reduction_points": 20,
+      "sample_size": 20,
+      "evidence": "Losses cluster in high-ATR names (PHOENIXLTD ~55, PRESTIGE ~47-67, ADANIGREEN ~49) where wide daily ranges stopped out entries.",
+      "status": "active",
+      "created_at": "2026-09-10T03:39:25.280698+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "adverse cross-asset correlation",
+      "confidence_reduction_points": 20,
+      "sample_size": 20,
+      "evidence": "Simultaneous BUY losses across realty (PRESTIGE, PHOENIXLTD, DLF, GODREJPROP, BRIGADE) and energy (ONGC, GAIL, BPCL, ADANIPOWER, TATAPOWER) indicate correlated sector drawdowns.",
+      "status": "active",
+      "created_at": "2026-09-10T03:39:25.280698+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "low-volume breakdown/breakout",
+      "confidence_reduction_points": 25,
+      "sample_size": 20,
+      "evidence": "All 20 losing trades show null relative volume, indicating entries on unconfirmed low-volume moves that failed to sustain.",
+      "status": "active",
+      "created_at": "2026-09-10T06:45:30.608499+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "overextended ATR volatility trap",
+      "confidence_reduction_points": 20,
+      "sample_size": 20,
+      "evidence": "Every loss occurred on BUY entries with ATR values ranging from 4.6 to 67.61, suggesting entries into overextended volatility that reversed.",
+      "status": "active",
+      "created_at": "2026-09-10T06:45:30.608499+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "adverse cross-asset correlation",
+      "confidence_reduction_points": 15,
+      "sample_size": 20,
+      "evidence": "All trades are BUY-side with null correlation data, and clustered losses in real estate (PRESTIGE, PHOENIXLTD, DLF, GODREJPROP, BRIGADE) and energy (ADANIPOWER, NTPC, ONGC, BPCL, TATAPOWER, GAIL) indicate correlated sector drawdowns.",
+      "status": "active",
+      "created_at": "2026-09-10T06:45:30.608499+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "low-volume breakdown/breakout",
+      "confidence_reduction_points": 20,
+      "sample_size": 3,
+      "evidence": "All 20 losing trades show null relative volume, indicating entries on low-volume moves that failed to sustain.",
+      "status": "active",
+      "created_at": "2026-09-10T07:11:53.344535+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "overextended ATR/volatility trap",
+      "confidence_reduction_points": 25,
+      "sample_size": 3,
+      "evidence": "High-ATR symbols like PHOENIXLTD (ATR ~55) and PRESTIGE (ATR ~50) produced repeated large losses, suggesting entries after volatility expansion.",
+      "status": "active",
+      "created_at": "2026-09-10T07:11:53.344535+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "adverse cross-asset correlation",
+      "confidence_reduction_points": 20,
+      "sample_size": 3,
+      "evidence": "Multiple BUY trades across real estate (PRESTIGE, PHOENIXLTD, DLF, GODREJPROP) and energy (ADANIPOWER, NTPC, ONGC, BPCL, GAIL, TATAPOWER) all lost simultaneously, indicating correlated sector exposure.",
+      "status": "active",
+      "created_at": "2026-09-10T07:11:53.344535+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "low-volume breakdown/breakout",
+      "confidence_reduction_points": 25,
+      "sample_size": 20,
+      "evidence": "All 20 losing trades show null relative volume, indicating entries on unconfirmed low-volume moves that failed to sustain.",
+      "status": "active",
+      "created_at": "2026-09-10T07:41:28.788293+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "overextended ATR volatility trap",
+      "confidence_reduction_points": 20,
+      "sample_size": 20,
+      "evidence": "Every loss occurred with h1_atr equal to d1_atr, signaling entries at daily-range extremes where mean reversion trapped buyers.",
+      "status": "active",
+      "created_at": "2026-09-10T07:41:28.788293+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "adverse cross-asset correlation",
+      "confidence_reduction_points": 20,
+      "sample_size": 20,
+      "evidence": "All trades were BUY-side with null correlation data, clustering losses across energy, realty, and power names during a broad market down-move.",
+      "status": "active",
+      "created_at": "2026-09-10T07:41:28.788293+00:00"
+    },
+    {
+      "affected_symbol": "AUROPHARMA",
+      "setup": "low-volume breakout",
+      "confidence_reduction_points": 20,
+      "sample_size": 3,
+      "evidence": "Entry on a BUY breakout with only 1.06x hourly relative volume failed to sustain, reversing to a -1478 loss as the move lacked participation.",
+      "status": "active",
+      "created_at": "2026-09-11T03:28:32.755573+00:00"
+    },
+    {
+      "affected_symbol": "AUROPHARMA",
+      "setup": "low-volume breakdown/breakout",
+      "confidence_reduction_points": 20,
+      "sample_size": 3,
+      "evidence": "Entry on a BUY with h1 relative volume of only 1.06 and d1 relative volume of 1.25 indicates insufficient participation, leading to a failed breakout and a -1478 loss.",
+      "status": "active",
+      "created_at": "2026-09-11T07:01:46.647237+00:00"
+    },
+    {
+      "affected_symbol": "CRUDEOILM-17Sep2026-9900-CE",
+      "setup": "overextended ATR/volatility trap",
+      "confidence_reduction_points": 25,
+      "sample_size": 3,
+      "evidence": "h1 ATR of 60.2 versus d1 ATR of 28.8 shows extreme intraday volatility expansion, causing a -1198 loss on a long option position.",
+      "status": "active",
+      "created_at": "2026-09-11T07:01:46.647237+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "low-volume breakdown/breakout (h1 relative volume < 0.5)",
+      "confidence_reduction_points": 25,
+      "sample_size": 3,
+      "evidence": "COALINDIA long lost -640 with h1 relative volume of only 0.019, confirming breakouts on near-zero participation fail.",
+      "status": "active",
+      "created_at": "2026-09-17T06:38:26.405536+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "overextended ATR / volatility trap (h1 ATR > 2x d1 ATR)",
+      "confidence_reduction_points": 20,
+      "sample_size": 3,
+      "evidence": "CRUDEOILM 9900-CE long lost -11584 with h1 ATR 60.2 versus d1 ATR 28.8, showing entries into intraday volatility spikes reverse.",
+      "status": "active",
+      "created_at": "2026-09-17T06:38:26.406538+00:00"
+    },
+    {
+      "affected_symbol": "ALL",
+      "setup": "adverse cross-asset correlation (correlated book exposure)",
+      "confidence_reduction_points": 15,
+      "sample_size": 3,
+      "evidence": "AUROPHARMA, COALINDIA and NESTLEIND longs all lost simultaneously with empty correlated maps, indicating unhedged correlated long exposure.",
+      "status": "active",
+      "created_at": "2026-09-17T06:38:26.406538+00:00"
+    }
+  ],
+  "last_audit_at": "2026-09-17T06:38:26.406538+00:00",
+  "trades_analyzed": 6
+}

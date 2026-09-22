@@ -1,0 +1,125 @@
+{
+  "generated_at": "2026-09-09T12:49:54.450085+05:30",
+  "cash_trades_analyzed": 586,
+  "missed": 4,
+  "starting_equity": 354101.3,
+  "mfe_share": {
+    "touched_0.5R": 31.1,
+    "touched_1.0R": 8.5,
+    "touched_1.5R": 3.9,
+    "never_reached_0.5R": 68.9
+  },
+  "variants": {
+    "cash_1.5R": {
+      "trades": 586,
+      "wins": 263,
+      "losses": 323,
+      "win_rate": 44.88,
+      "pnl": -33045.02,
+      "return_pct": -9.332,
+      "avg_r": -0.005,
+      "max_dd": -36175.96,
+      "profit_factor": 0.819
+    },
+    "take_half_target_0.5R": {
+      "trades": 586,
+      "wins": 293,
+      "losses": 293,
+      "win_rate": 50.0,
+      "pnl": -34499.34,
+      "return_pct": -9.743,
+      "avg_r": -0.007,
+      "max_dd": -35041.13,
+      "profit_factor": 0.793
+    },
+    "take_1R": {
+      "trades": 586,
+      "wins": 265,
+      "losses": 321,
+      "win_rate": 45.22,
+      "pnl": -43188.57,
+      "return_pct": -12.197,
+      "avg_r": -0.018,
+      "max_dd": -44000.36,
+      "profit_factor": 0.762
+    },
+    "exit_in_first_hour_0.5R": {
+      "trades": 585,
+      "wins": 258,
+      "losses": 327,
+      "win_rate": 44.1,
+      "pnl": -30058.44,
+      "return_pct": -8.489,
+      "avg_r": -0.001,
+      "max_dd": -30516.67,
+      "profit_factor": 0.732
+    },
+    "0.5R_FIN_FMCG_only": {
+      "trades": 75,
+      "wins": 43,
+      "losses": 32,
+      "win_rate": 57.33,
+      "pnl": 4072.15,
+      "return_pct": 1.15,
+      "avg_r": 0.081,
+      "max_dd": -3287.39,
+      "profit_factor": 1.278
+    },
+    "0.5R_momentum_ge_1pct": {
+      "trades": 313,
+      "wins": 166,
+      "losses": 147,
+      "win_rate": 53.04,
+      "pnl": -7447.87,
+      "return_pct": -2.103,
+      "avg_r": 0.018,
+      "max_dd": -9244.32,
+      "profit_factor": 0.917
+    },
+    "0.5R_momATR_ge_0.5": {
+      "trades": 264,
+      "wins": 124,
+      "losses": 140,
+      "win_rate": 46.97,
+      "pnl": -25689.75,
+      "return_pct": -7.255,
+      "avg_r": -0.037,
+      "max_dd": -26510.81,
+      "profit_factor": 0.69
+    },
+    "0.5R_skip_pharma": {
+      "trades": 521,
+      "wins": 270,
+      "losses": 251,
+      "win_rate": 51.82,
+      "pnl": -21954.47,
+      "return_pct": -6.2,
+      "avg_r": 0.006,
+      "max_dd": -26003.44,
+      "profit_factor": 0.848
+    },
+    "1R_FIN_FMCG_only": {
+      "trades": 75,
+      "wins": 38,
+      "losses": 37,
+      "win_rate": 50.67,
+      "pnl": 2659.6,
+      "return_pct": 0.751,
+      "avg_r": 0.067,
+      "max_dd": -4289.43,
+      "profit_factor": 1.159
+    },
+    "0.5R_no_day_cap": {
+      "trades": 586,
+      "wins": 293,
+      "losses": 293,
+      "win_rate": 50.0,
+      "pnl": -34499.34,
+      "return_pct": -9.743,
+      "avg_r": -0.007,
+      "max_dd": -35041.13,
+      "profit_factor": 0.793
+    }
+  },
+  "note": "Cash only. Same 9:20 BUY fills as the ATR 1.5R year. Exits replayed on cached 5-minute bars after 9:20. Same-bar SL+target counts as SL. Rs 2000 day cap unless noted."
+}
