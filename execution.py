@@ -23,6 +23,10 @@ from zoneinfo import ZoneInfo
 def evaluate_entry_plan(symbol, signal="BUY", chase_risk="medium", strategy="breakout"):
     instrument = resolve_symbol_cached(symbol)
     five = fetch_five_minute_candles(instrument, bars=80)
+    if five is None or five.empty:
+        from broker import fetch_live_session_candles
+
+        five = fetch_live_session_candles(instrument, interval=5)
     daily = fetch_daily_candles(instrument, bars=40)
     session = datetime.now(ZoneInfo("Asia/Kolkata")).date()
     is_commodity = instrument["exchange"] == "MCX"
@@ -35,8 +39,8 @@ def evaluate_entry_plan(symbol, signal="BUY", chase_risk="medium", strategy="bre
     strategy = str(strategy or "breakout").strip().lower()
     live_orb = (
         bool(getattr(config, "LIVE_FIXED_PROTECTION_ENABLED", False))
-        and not bool(getattr(config, "PAPER_TRADE", False))
-        and not is_commodity
+        and instrument.get("exchange") == "NSE"
+        and instrument.get("instrument") == "EQUITY"
         and bool(getattr(config, "REQUIRE_FIRST_5M_RETRACE", True))
     )
     if live_orb or (
@@ -163,6 +167,17 @@ def get_open_positions(symbol=None):
 
 
 def close_position(ticket_or_pos):
+    target = (
+        ticket_or_pos.get("ticket")
+        if isinstance(ticket_or_pos, dict)
+        else ticket_or_pos
+    )
+    if str(target or "").startswith("PAPER-") or (
+        isinstance(ticket_or_pos, dict) and ticket_or_pos.get("paper")
+    ):
+        from paper_book import close_fill
+
+        return close_fill(target, reason="MANUAL")
     if isinstance(ticket_or_pos, dict) and ticket_or_pos.get("raw"):
         data = close_position_market(ticket_or_pos["raw"])
         return {"ok": True, "data": data}
@@ -262,10 +277,7 @@ def execute_trade(
     price = round_to_tick(plan["entry"], tick_size)
     trailing_jump = 0.0
 
-    live_fixed = (
-        bool(getattr(config, "LIVE_FIXED_PROTECTION_ENABLED", False))
-        and not bool(getattr(config, "PAPER_TRADE", False))
-    )
+    live_fixed = bool(getattr(config, "LIVE_FIXED_PROTECTION_ENABLED", False))
     if live_fixed:
         if stop_loss is not None:
             sl = round_to_tick(float(stop_loss), tick_size)

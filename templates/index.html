@@ -69,6 +69,12 @@
     }
     .brand { font-weight: 700; letter-spacing: 0.08em; font-size: 13px; }
     .brand span { color: var(--green); }
+    .desk-switch { display: inline-flex; gap: 4px; }
+    .desk-switch a {
+      color: #9fb1c8; text-decoration: none; padding: 7px 10px;
+      border: 1px solid var(--line); border-radius: 6px; font-size: 12px;
+    }
+    .desk-switch a.active { color: #fff; border-color: var(--blue); background: rgba(78,161,255,.14); }
     .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
     select, input, button {
       background: var(--panel);
@@ -86,8 +92,15 @@
     .grid { display: grid; gap: 12px; }
     .grid > *, .card, .row > * { min-width: 0; }
     select, input { max-width: 100%; }
+    #bookDate {
+      background: #0c121c; color: #fff; border: 1px solid var(--line);
+      border-radius: 6px; padding: 7px 8px; font: 12px "IBM Plex Mono", monospace;
+      color-scheme: dark;
+    }
     main { overflow-x: hidden; }
-    .metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .metrics { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .pnl-up { color: var(--green); }
+    .pnl-down { color: var(--red); }
     .two { grid-template-columns: 1.3fr 0.7fr; }
     .card {
       background: rgba(16, 24, 38, 0.91);
@@ -125,6 +138,23 @@
       padding: 4px 7px; font-size: 10px; color: #7db8ff;
       background: rgba(78,161,255,.08); cursor: pointer;
     }
+    .preopen-banner {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) 1.5fr;
+      gap: 8px;
+    }
+    .preopen-chip {
+      padding: 10px; border: 1px solid var(--line); border-radius: 8px;
+      background: rgba(9,18,31,.86);
+    }
+    .preopen-chip.green, .preopen-chip.stable, .preopen-chip.cash { border-color: rgba(61,214,140,.45); }
+    .preopen-chip.red, .preopen-chip.cash_stand_down { border-color: rgba(255,92,122,.45); }
+    .preopen-chip.volatile, .preopen-chip.cash_reduced { border-color: rgba(245,197,66,.45); }
+    .opt-row { cursor: pointer; }
+    .opt-row.hedge { opacity: 0.92; }
+    .opt-row.selected { background: rgba(78,161,255,.08); }
+    .preopen-chip.short, .preopen-chip.fade { border-color: rgba(255,92,122,.45); }
+    .preopen-chip.long { border-color: rgba(61,214,140,.45); }
+    .preopen-chip.flat { border-color: var(--line); }
     .pulse-strip {
       display: grid; grid-template-columns: repeat(10, minmax(105px, 1fr));
       gap: 8px; overflow-x: auto; padding-bottom: 2px;
@@ -192,7 +222,28 @@
     .detail-inner { max-width: 1180px; margin: 0 auto; }
     #detailChart { height: 500px; margin-top: 14px; }
     .detail-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 12px; }
+    .mode-toggle {
+      display: inline-flex; align-items: stretch; border: 1px solid var(--line);
+      border-radius: 8px; overflow: hidden; background: #0c121c;
+    }
+    .mode-toggle button {
+      border: 0; border-radius: 0; padding: 8px 14px; font-size: 12px;
+      font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      background: transparent; color: #9fb1c8; cursor: pointer;
+    }
+    .mode-toggle button.active.paper {
+      background: rgba(245, 197, 66, 0.2); color: var(--amber);
+    }
+    .mode-toggle button.active.live {
+      background: rgba(255, 92, 122, 0.22); color: var(--red);
+    }
+    .mode-caption { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #9fb1c8; }
     .live-clock { font: 12px "IBM Plex Mono", monospace; color: #9fb1c8; }
+    .key-banner { padding: 10px 20px; font-size: 13px; }
+    .key-expired, .key-error, .key-missing { background: rgba(255, 92, 122, 0.16); color: #ffb3c0; }
+    .key-soon { background: rgba(245, 197, 66, 0.14); color: #f5c542; }
+    .key-unknown { background: rgba(78, 161, 255, 0.12); color: #9dc4ff; }
+    a.quiet { color: var(--blue); text-decoration: none; font-size: 12px; }
     @media (max-width: 1100px) {
       .metrics, .two { grid-template-columns: 1fr 1fr; }
       .market-hero-grid { grid-template-columns: 1fr 1fr; }
@@ -203,7 +254,7 @@
       .metrics, .two { grid-template-columns: 1fr; }
       .sidebar { display: none; }
       .app-frame { margin-left: 0; }
-      .market-hero-grid, .summary-grid, .insight-grid, .detail-stats { grid-template-columns: 1fr; }
+      .market-hero-grid, .summary-grid, .insight-grid, .detail-stats, .preopen-banner { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -211,20 +262,40 @@
   <aside class="sidebar">
     <div class="side-logo">MARKET <span>COMMAND</span></div>
     <nav class="side-nav">
-      <a class="active" href="#marketCommand">⌂ &nbsp;Dashboard</a>
-      <a href="#inputCenter">＋ &nbsp;Stocks &amp; F&amp;O</a>
-      <a href="#activeAlerts">♢ &nbsp;Active Alerts</a>
-      <a href="#tradingDesk">⚙ &nbsp;Trading Desk</a>
+      <a href="/command">Command</a>
+      <a href="/plan">Plan</a>
+      <a class="active" href="/">Execute</a>
+      <a href="/charts">Charts</a>
+      <a href="/settings">Settings</a>
     </nav>
     <div class="mountain-note">Good decisions come from clear information.</div>
   </aside>
   <div class="app-frame">
+  <div id="keyExpiryBanner" class="key-banner" hidden></div>
   <header>
     <div>
-      <div class="brand">AUTONOMOUS <span>AI HEDGE FUND</span></div>
-      <div class="label" style="margin-top:4px">Dhan NSE/MCX · Delta crypto derivatives</div>
+      <div class="brand">EXECUTE <span>DESK</span></div>
+      <div class="label" style="margin-top:4px">hedge · Dhan cash / F&amp;O / MCX · Delta paper</div>
     </div>
     <div class="controls">
+      <nav class="desk-switch">
+        <a href="/command">Command</a>
+        <a href="/plan">Plan</a>
+        <a class="active" href="/">Execute</a>
+        <a href="/charts">Charts</a>
+      </nav>
+      <div>
+        <div class="mode-caption">Book</div>
+        <div class="mode-toggle" role="group" aria-label="Paper or live book">
+          <button type="button" id="modePaper" class="paper" onclick="setDeskMode('paper')">Paper</button>
+          <button type="button" id="modeLive" class="live" onclick="setDeskMode('live')">Live</button>
+        </div>
+      </div>
+      <div>
+        <div class="mode-caption">Calendar</div>
+        <input type="date" id="bookDate" autocomplete="off" onchange="setBookDate(this.value)" />
+        <datalist id="bookDateList"></datalist>
+      </div>
       <div class="tabs">
         <button id="tabDhan" class="active" onclick="setDesk('dhan')">DHAN</button>
         <button id="tabDelta" onclick="setDesk('delta')">DELTA</button>
@@ -245,6 +316,16 @@
 
   <main>
     <section class="market-command" id="marketCommand">
+      <div class="card" id="preopenBanner">
+        <div class="section-heading">
+          <div>
+            <div class="label">09:00–09:15 pre-open</div>
+            <div class="small" id="preopenBannerMeta">Dow · Nasdaq · India VIX · NSE A/D · GIFT — bias only</div>
+          </div>
+          <a class="view-more" href="/command">Full briefing →</a>
+        </div>
+        <div class="preopen-banner" id="preopenBannerBody">Loading briefing…</div>
+      </div>
       <div class="card">
         <div class="section-heading">
           <div>
@@ -292,6 +373,14 @@
         <div class="label">Confirmed fills</div>
         <div class="value" id="fillCount">0</div>
       </div>
+      <div class="card">
+        <div class="label" id="pnlLabel">Book P&amp;L</div>
+        <div class="value" id="todayPnl">--</div>
+      </div>
+      <div class="card">
+        <div class="label" id="pnlPctLabel">Day profit %</div>
+        <div class="value" id="todayPnlPct">--</div>
+      </div>
     </div>
 
     <div class="grid two dhan-only" style="margin-top:12px">
@@ -314,6 +403,43 @@
           ATR 1:2 stops, Rs 500 max risk per trade, five mixed slots (cash, F&O, commodity), capital split 5 ways. One name per bullish sector after 09:25 IST: first-5m break, retrace, then a completed 3m close above today's high. No repeat of a name after stop or target. After a 3m close above the 1:2 rung, stop locks there and the next target lifts 2R, max two extra rungs (1:4 then 1:6). Kill switch squares off the whole book at Rs 3000 day loss; profit square-off at Rs 5000. Confidence below threshold forces HOLD.
           Learned auditor rules penalize matching setups.
         </p>
+      </div>
+    </div>
+
+    <div class="card dhan-only" id="indexOptionCard" style="margin-top:12px">
+      <div class="section-heading">
+        <div>
+          <div class="label">Index CE / PE from today’s side</div>
+          <div class="small" id="indexOptionMeta">Nifty · Bank Nifty · Sensex · Greeks · OI · volume. Tick a row, then add.</div>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" onclick="loadIndexOptions(true)">Refresh chain</button>
+          <button type="button" class="primary" onclick="addSelectedIndexOptions()">Add selected to daily book</button>
+        </div>
+      </div>
+      <div style="overflow:auto">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Index</th>
+              <th>Role</th>
+              <th>Contract</th>
+              <th>LTP</th>
+              <th>Δ</th>
+              <th>IV</th>
+              <th>OI</th>
+              <th>OI chg</th>
+              <th>Volume</th>
+              <th>Vega</th>
+              <th>Score</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody id="indexOptionBody">
+            <tr><td colspan="13" class="small">Loading qualified strikes…</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -363,15 +489,17 @@
       </div>
     </div>
 
-    <div class="container-fluid px-0 mt-3 dhan-only" id="tradingDesk">
-      <div class="d-flex justify-content-between align-items-baseline mb-2">
-        <div class="label">Live charts and 5-minute breakout alerts</div>
+    <div class="card dhan-only" id="tradingDesk" style="margin-top:12px">
+      <div class="d-flex justify-content-between align-items-center gap-2">
+        <div>
+          <div class="label">Stock charts</div>
+          <div class="small">Watchlist candles, entry / SL / TP lines live on the Charts tab.</div>
+        </div>
         <div class="d-flex align-items-center gap-2">
           <button id="alertButton" onclick="enableBreakoutAlerts()">Enable sound alerts</button>
-          <div id="chartMeta" class="chart-last">Loading today's IST session from Dhan…</div>
+          <a class="quiet" href="/charts">Open Charts →</a>
         </div>
       </div>
-      <div class="row g-3" id="chartGrid"></div>
     </div>
 
     <div class="card dhan-only" style="margin-top:12px">
@@ -382,7 +510,7 @@
           <thead>
             <tr>
               <th>#</th><th>Name</th><th>Symbol</th><th>Strategy</th><th>Setup</th>
-              <th>Entry</th><th>SL</th><th>TP</th><th>Qty</th><th>Note</th><th></th>
+              <th>Entry</th><th>SL</th><th>TP</th><th>Exit</th><th>Qty</th><th>Note</th><th></th>
             </tr>
           </thead>
           <tbody id="watchBody"></tbody>
@@ -463,11 +591,14 @@
           </div>
           <div class="col-6 col-lg-4">
             <select id="deltaStrategyInput" class="w-100">
-              <option value="auto_both">Automatic buy/sell strangle</option>
+              <option value="auto_structure">Auto: straddle / strangle / condor / fly</option>
+              <option value="auto_both">Auto (legacy alias)</option>
               <option value="buy_straddle">Buy straddle</option>
               <option value="buy_strangle">Buy strangle</option>
               <option value="sell_straddle">Sell straddle</option>
               <option value="sell_strangle">Sell strangle</option>
+              <option value="iron_condor">Iron condor</option>
+              <option value="butterfly">Iron butterfly</option>
             </select>
           </div>
           <div class="col-12 col-lg-3 d-flex gap-2">
@@ -483,12 +614,14 @@
         </div>
       </div>
 
-      <div class="container-fluid px-0 mt-3">
-        <div class="d-flex justify-content-between align-items-baseline mb-2">
-          <div class="label">Delta live 5-minute charts</div>
-          <div id="deltaChartMeta" class="chart-last">Loading Delta markets…</div>
+      <div class="card" style="margin-top:12px">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="label">Delta charts</div>
+            <div class="small">5-minute market candles moved to the Charts tab.</div>
+          </div>
+          <a class="quiet" href="/charts" onclick="sessionStorage.setItem('hedge.chartDesk','delta')">Open Charts →</a>
         </div>
-        <div class="row g-3" id="deltaChartGrid"></div>
       </div>
 
       <div class="grid two" style="margin-top:12px">
@@ -510,13 +643,13 @@
     </section>
 
     <div class="card dhan-only" style="margin-top:12px">
-      <div class="label">Confirmed fills ledger</div>
+      <div class="label" id="ledgerLabel">Confirmed fills ledger</div>
       <div style="overflow:auto;max-height:320px">
         <table>
           <thead>
             <tr>
-              <th>Time</th><th>Symbol</th><th>Side</th><th>Fill</th>
-              <th>SL</th><th>TP</th><th>Qty</th><th>Risk %</th><th>Deal</th><th>Status</th>
+              <th>Time</th><th>Symbol</th><th>Side</th><th>Entry</th>
+              <th>SL</th><th>TP</th><th>Exit</th><th>Qty</th><th>P&L</th><th>P&L %</th><th>Deal</th><th>Status</th>
             </tr>
           </thead>
           <tbody id="fillBody"></tbody>
@@ -553,6 +686,7 @@
     </div>
   </section>
 
+  <script src="/static/keys.js"></script>
   <script>
     let activeDesk = "dhan";
     let engineRunning = false;
@@ -664,6 +798,133 @@
       document.getElementById("pulseUpdated").textContent = `Updated ${updated}`;
     }
 
+    async function loadIndexOptions(force) {
+      const body = document.getElementById("indexOptionBody");
+      const meta = document.getElementById("indexOptionMeta");
+      if (!body) return;
+      try {
+        const settings = await fetch("/api/settings").then((res) => res.json());
+        if (!settings.credentials || !settings.credentials.dhan_ready) {
+          body.innerHTML = `<tr><td colspan="13" class="small">Dhan keys are not on the server yet. Open Settings, save Client ID and Access Token, then click Refresh chain.</td></tr>`;
+          return;
+        }
+      } catch (error) {
+        /* continue; chain fetch will report the real error */
+      }
+      body.innerHTML = `<tr><td colspan="13" class="small">Reading Dhan option chain (one request every 3s)…</td></tr>`;
+      try {
+        const response = await fetch("/api/index-options" + (force ? "?force=true" : ""));
+        const data = await response.json();
+        window.indexOptionRows = data.rows || [];
+        meta.textContent = [
+          data.title || "Today's side",
+          data.vix != null ? "VIX " + Number(data.vix).toFixed(2) : "",
+          (data.errors || []).length ? data.errors.join(" · ") : (data.rule || "")
+        ].filter(Boolean).join(" · ");
+        if (!data.ok && data.error) {
+          body.innerHTML = `<tr><td colspan="13" class="small">${escapeHtml(data.error)}</td></tr>`;
+          return;
+        }
+        if (data.note && !(data.rows || []).length) {
+          body.innerHTML = `<tr><td colspan="13" class="small">${escapeHtml(data.note)}</td></tr>`;
+          return;
+        }
+        if (!(data.rows || []).length) {
+          const extra = (data.errors || []).join(" · ");
+          body.innerHTML = `<tr><td colspan="13" class="small">${escapeHtml(extra || "No liquid strikes passed the filter.")}</td></tr>`;
+          return;
+        }
+        body.innerHTML = data.rows.map((row, index) => `
+          <tr class="opt-row ${row.role || ""} ${row.selected ? "selected" : ""}" data-opt-index="${index}" onclick="toggleIndexOptionRow(event, ${index})">
+            <td><input type="checkbox" ${row.selected ? "checked" : ""} onclick="event.stopPropagation(); markIndexOption(${index}, this.checked)" /></td>
+            <td>${escapeHtml(row.underlying)}</td>
+            <td>${escapeHtml(row.role_label || row.role)}</td>
+            <td>${escapeHtml(row.contract)}</td>
+            <td>${row.ltp != null ? row.ltp : "--"}</td>
+            <td>${row.delta != null ? Number(row.delta).toFixed(2) : "--"}</td>
+            <td>${row.iv != null ? Number(row.iv).toFixed(1) : "--"}</td>
+            <td>${row.oi != null ? Number(row.oi).toLocaleString() : "--"}</td>
+            <td class="${Number(row.oi_change_pct) >= 0 ? "up" : "down"}">${row.oi_change_pct != null ? Number(row.oi_change_pct).toFixed(1) + "%" : "--"}</td>
+            <td>${row.volume != null ? Number(row.volume).toLocaleString() : "--"}</td>
+            <td>${row.vega != null ? Number(row.vega).toFixed(1) : "--"}</td>
+            <td>${row.score != null ? row.score : "--"}</td>
+            <td class="small">${escapeHtml(row.why || "")}</td>
+          </tr>`).join("");
+      } catch (error) {
+        body.innerHTML = `<tr><td colspan="13" class="small">Option chain unavailable: ${escapeHtml(String(error))}</td></tr>`;
+      }
+    }
+
+    function markIndexOption(index, checked) {
+      if (!window.indexOptionRows || !window.indexOptionRows[index]) return;
+      window.indexOptionRows[index].selected = checked;
+      const row = document.querySelector(`[data-opt-index="${index}"]`);
+      if (row) row.classList.toggle("selected", checked);
+      const box = row && row.querySelector("input[type=checkbox]");
+      if (box) box.checked = checked;
+    }
+
+    function toggleIndexOptionRow(event, index) {
+      if (event.target && event.target.type === "checkbox") return;
+      const current = !!(window.indexOptionRows && window.indexOptionRows[index] && window.indexOptionRows[index].selected);
+      markIndexOption(index, !current);
+    }
+
+    async function addSelectedIndexOptions() {
+      const rows = (window.indexOptionRows || []).filter((row) => row.selected);
+      if (!rows.length) {
+        document.getElementById("inputStatus").textContent = "Tick at least one strike.";
+        return;
+      }
+      await refreshInputCenter();
+      const keys = new Set(watchlistItems.map(watchKey));
+      rows.forEach((row) => {
+        const item = {
+          rank: watchlistItems.length + 1,
+          name: row.contract,
+          symbol: row.contract,
+          exchange: row.exchange || "NSE",
+          instrument: "OPTIDX",
+          strategy: "breakout",
+          catalyst: `${row.role_label || row.role} · ${row.why || ""}`,
+          chase_risk: "medium",
+          security_id: String(row.security_id || ""),
+          expiry: row.expiry || ""
+        };
+        const key = watchKey(item);
+        if (keys.has(key)) return;
+        watchlistItems.push(item);
+        keys.add(key);
+      });
+      await saveInputCenter("Index options added");
+    }
+
+    async function loadPreopenBanner() {
+      try {
+        const response = await fetch("/api/preopen");
+        const data = await response.json();
+        const rec = data.recommendation || {};
+        const daily = data.daily || {};
+        const checks = data.checks || [];
+        document.getElementById("preopenBannerMeta").textContent =
+          (daily.title || rec.title || data.error || "Bias only");
+        document.getElementById("preopenBannerBody").innerHTML =
+          checks.map((item) => `
+            <div class="preopen-chip ${item.status || "wait"}">
+              <div class="label">${escapeHtml(item.name)}</div>
+              <div class="small" style="text-transform:capitalize;margin-top:6px">${escapeHtml(item.status || "wait")}</div>
+              <div class="small" style="margin-top:6px">${escapeHtml((item.detail || "").slice(0, 90))}</div>
+            </div>`).join("") +
+          `<div class="preopen-chip ${daily.side || rec.instrument || "wait"}">
+            <div class="label">Today's side</div>
+            <div class="small" style="margin-top:6px">${escapeHtml(daily.title || rec.title || "Wait")}</div>
+            <div class="small" style="margin-top:6px">${escapeHtml((daily.body || rec.body || "").slice(0, 160))}</div>
+          </div>`;
+      } catch (error) {
+        document.getElementById("preopenBannerMeta").textContent = "Pre-open unavailable";
+      }
+    }
+
     async function loadMarketPulse() {
       try {
         const response = await fetch("/api/market/pulse");
@@ -689,7 +950,7 @@
       }
       host.innerHTML = active.map((row) => {
         const state = row.alert_state === "BREAKOUT" ? "breakout" : "wait";
-        return `<div class="alert-row ${state}" onclick="document.getElementById('${chartDomId(row)}-col')?.scrollIntoView({behavior:'smooth'})">
+        return `<div class="alert-row ${state}" onclick="location.href='/charts#${chartDomId(row)}'">
           <div><strong>${escapeHtml(row.symbol || row.name)}</strong>
             <div class="small">${escapeHtml(row.reason || row.setup || "Monitoring")}</div>
             <div class="small">Entry ${marketPrice(row.entry)} · SL ${marketPrice(row.sl)} · TP ${marketPrice(row.tp)}</div>
@@ -703,7 +964,7 @@
       const rows = (watch || []).filter((row) => row.symbol || row.name).slice(0, 8);
       const host = document.getElementById("watchMarketList");
       host.innerHTML = rows.length ? rows.map((row) => `
-        <div class="market-list-row" onclick="document.getElementById('${chartDomId(row)}-col')?.scrollIntoView({behavior:'smooth'})">
+        <div class="market-list-row" onclick="location.href='/charts#${chartDomId(row)}'">
           <span>${escapeHtml(row.symbol || row.name)}</span>
           <strong>${row.entry != null ? marketPrice(row.entry) : "--"}</strong>
           <span class="market-change ${row.ok ? "up" : ""}">${row.ok ? "READY" : "WATCH"}</span>
@@ -856,12 +1117,7 @@
       document.getElementById("riskInput").style.display = desk === "dhan" ? "" : "none";
       latestTradeCount = 0;
       pollBackend();
-      if (desk === "delta") {
-        refreshDeltaUniverse();
-        loadDeltaCharts();
-      } else {
-        loadCharts();
-      }
+      if (desk === "delta") refreshDeltaUniverse();
     }
 
     function resizeCanvas() {
@@ -903,11 +1159,75 @@
     }
     animate();
 
+    function currentBookDate() {
+      const today = todayIst();
+      const saved = localStorage.getItem("hedge.desk.bookDate");
+      const pickedOn = localStorage.getItem("hedge.desk.bookDatePickedOn");
+      if (pickedOn === today && saved) return saved;
+      return today;
+    }
+
+    function syncBookCalendar(data) {
+      const field = document.getElementById("bookDate");
+      const list = document.getElementById("bookDateList");
+      if (!field) return;
+      const today = todayIst();
+      const pickedOn = localStorage.getItem("hedge.desk.bookDatePickedOn");
+      const selected = pickedOn === today
+        ? (field.value || data.book_date || currentBookDate())
+        : today;
+      field.value = selected;
+      localStorage.setItem("hedge.desk.bookDate", selected);
+      if (pickedOn !== today) {
+        localStorage.setItem("hedge.desk.bookDatePickedOn", today);
+      }
+      if (list) {
+        list.innerHTML = (data.book_dates || []).map((day) => `<option value="${day}"></option>`).join("");
+        field.setAttribute("list", "bookDateList");
+      }
+      const mode = data.desk_mode || (data.paper_trade ? "paper" : "live");
+      const label = mode === "paper" ? "Paper P&L" : "Live P&L";
+      const ledger = document.getElementById("ledgerLabel");
+      const pnlLabel = document.getElementById("pnlLabel");
+      if (pnlLabel) pnlLabel.textContent = `${label} · ${selected}`;
+      if (ledger) ledger.textContent = `${mode === "paper" ? "Paper" : "Live"} fills · ${selected}`;
+    }
+
+    async function setBookDate(value) {
+      const day = String(value || "").slice(0, 10);
+      if (!day) return;
+      const field = document.getElementById("bookDate");
+      if (field) field.value = day;
+      localStorage.setItem("hedge.desk.bookDate", day);
+      localStorage.setItem("hedge.desk.bookDatePickedOn", todayIst());
+      await pollBackend();
+    }
+
+    function paintTodayPnl(data) {
+      const pnlEl = document.getElementById("todayPnl");
+      const pctEl = document.getElementById("todayPnlPct");
+      if (!pnlEl || !pctEl) return;
+      const pnl = Number(data.today_pnl);
+      const pct = Number(data.today_pnl_pct);
+      const tone = Number.isFinite(pnl) && pnl < 0 ? "pnl-down" : "pnl-up";
+      pnlEl.className = "value " + (Number.isFinite(pnl) ? tone : "");
+      pctEl.className = "value " + (Number.isFinite(pct) ? tone : "");
+      pnlEl.textContent = Number.isFinite(pnl)
+        ? ((pnl >= 0 ? "+" : "") + "Rs " + pnl.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }))
+        : "--";
+      pctEl.textContent = Number.isFinite(pct)
+        ? ((pct >= 0 ? "+" : "") + pct.toFixed(2) + "%")
+        : "--";
+    }
+
     function applyDhan(data) {
+      HedgeKeys.renderBanner(document.getElementById("keyExpiryBanner"));
       engineRunning = Boolean(data.is_running);
       document.getElementById("statusText").textContent = engineRunning ? "RUNNING" : "STANDBY";
       document.getElementById("statusIndicator").className = "pulse" + (engineRunning ? " on" : "");
       document.getElementById("engineButton").textContent = engineRunning ? "Stop Engine" : "Start Engine";
+      syncModeToggle(data.desk_mode || (data.paper_trade ? "paper" : "live"));
+      syncBookCalendar(data);
       const engineStatus = document.getElementById("engineControlStatus");
       if (data.broker_error) {
         engineStatus.textContent = "Dhan authentication unavailable";
@@ -935,6 +1255,7 @@
       document.getElementById("slTag").textContent = "SL " + (data.last_stop_loss ?? "--");
       document.getElementById("tpTag").textContent = "TP " + (data.last_take_profit ?? "--");
       document.getElementById("fillCount").textContent = (data.trade_history || []).length;
+      paintTodayPnl(data);
       if (data.interval) document.getElementById("intervalSelect").value = String(data.interval);
       if (data.risk_percent) document.getElementById("riskInput").value = data.risk_percent;
 
@@ -951,7 +1272,7 @@
           ? "Today’s manual and seasonal entry slots are complete; live entry/SL/TP monitoring continues."
           : "Waiting for a valid manual or seasonal breakout.";
         document.getElementById("watchMeta").textContent = data.catalyst_mode
-          ? `Manual strategy mode on. ${executionMode} · 5 mixed slots · Rs 500 · kill Rs 3000 · 1/sector after 09:25 · ${slotState}`
+          ? `Manual strategy mode on. ${executionMode} book ${data.book_date || ""} · 5 mixed slots · Rs 500 · kill Rs 3000 · 1/sector after 09:25 · ${slotState}`
           : "Catalyst mode off.";
         watch.forEach((w) => {
           notifyBreakout(w);
@@ -970,47 +1291,60 @@
           tr.innerHTML = `<td>${w.rank || ""}</td><td>${w.name || ""}</td>
             <td>${w.symbol || ""}</td>`;
           const strategyCell = document.createElement("td");
-          const strategySelect = document.createElement("select");
-          strategySelect.className = "table-strategy-select";
-          [
-            ["breakout", "Breakout · previous candle SL"],
-            ["range_breakout", "2-hour range breakout"],
-            ["consolidation", "Consolidation break"],
-            ["trend_break", "Trend break"]
-          ].forEach(([value, label]) => {
-            const option = document.createElement("option");
-            option.value = value;
-            option.textContent = label;
-            option.selected = String(w.strategy || "breakout") === value;
-            strategySelect.appendChild(option);
-          });
-          const saveStrategy = document.createElement("button");
-          saveStrategy.className = "table-save";
-          saveStrategy.textContent = "Save";
-          saveStrategy.disabled = true;
-          strategySelect.onchange = () => {
-            saveStrategy.disabled =
-              strategySelect.value === String(w.strategy || "breakout");
+          if (w.paper_only) {
+            strategyCell.textContent = "Paper fill";
+          } else {
+            const strategySelect = document.createElement("select");
+            strategySelect.className = "table-strategy-select";
+            [
+              ["breakout", "Breakout · previous candle SL"],
+              ["range_breakout", "2-hour range breakout"],
+              ["consolidation", "Consolidation break"],
+              ["trend_break", "Trend break"]
+            ].forEach(([value, label]) => {
+              const option = document.createElement("option");
+              option.value = value;
+              option.textContent = label;
+              option.selected = String(w.strategy || "breakout") === value;
+              strategySelect.appendChild(option);
+            });
+            const saveStrategy = document.createElement("button");
+            saveStrategy.className = "table-save";
             saveStrategy.textContent = "Save";
-          };
-          saveStrategy.onclick = () =>
-            saveInlineStrategy(w, strategySelect, saveStrategy);
-          strategyCell.appendChild(strategySelect);
-          strategyCell.appendChild(saveStrategy);
+            saveStrategy.disabled = true;
+            strategySelect.onchange = () => {
+              saveStrategy.disabled =
+                strategySelect.value === String(w.strategy || "breakout");
+              saveStrategy.textContent = "Save";
+            };
+            saveStrategy.onclick = () =>
+              saveInlineStrategy(w, strategySelect, saveStrategy);
+            strategyCell.appendChild(strategySelect);
+            strategyCell.appendChild(saveStrategy);
+          }
           tr.appendChild(strategyCell);
+          const setupLabel = w.alert_state === "BREAKOUT"
+            ? "BREAKOUT"
+            : (w.setup || (w.ok ? "ready" : "wait"));
+          const exitLabel = w.exit != null && w.exit !== ""
+            ? `${w.exit}${w.exit_reason ? " · " + w.exit_reason : ""}`
+            : "";
           tr.insertAdjacentHTML("beforeend", `
-            <td>${w.alert_state === "BREAKOUT" ? "BREAKOUT" : (w.setup || (w.ok ? "ready" : "wait"))}</td>
+            <td>${setupLabel}</td>
             <td>${w.entry ?? ""}</td><td>${w.sl ?? ""}</td><td>${w.tp ?? ""}</td>
+            <td>${exitLabel}</td>
             <td>${w.qty ?? ""}</td><td>${w.reason || w.catalyst || ""} · ${volumeNote} · ${oiNote}</td>`);
           const action = document.createElement("td");
-          const remove = document.createElement("button");
-          remove.className = "danger";
-          remove.textContent = "Remove";
-          remove.onclick = () => removeWatchlistStock({
-            ...w,
-            symbol: w.input_symbol || w.symbol
-          });
-          action.appendChild(remove);
+          if (!w.paper_only) {
+            const remove = document.createElement("button");
+            remove.className = "danger";
+            remove.textContent = "Remove";
+            remove.onclick = () => removeWatchlistStock({
+              ...w,
+              symbol: w.input_symbol || w.symbol
+            });
+            action.appendChild(remove);
+          }
           tr.appendChild(action);
           watchBody.appendChild(tr);
         });
@@ -1058,10 +1392,14 @@
       fills.slice().reverse().slice(0, 40).forEach((t) => {
         const tr = document.createElement("tr");
         const when = t.time ? new Date(t.time).toLocaleTimeString() : "--";
+        const exitPx = t.exit_price != null ? t.exit_price : "";
+        const pnl = t.pnl != null && t.pnl !== "" ? t.pnl : "";
+        const pnlPct = t.pnl_pct != null && t.pnl_pct !== "" ? t.pnl_pct + "%" : "";
         tr.innerHTML = `<td>${when}</td><td>${t.symbol || t.asset || ""}</td>
-          <td>${t.side || t.signal || ""}</td><td>${t.fill || ""}</td>
-          <td>${t.sl || ""}</td><td>${t.tp || ""}</td><td>${t.volume || ""}</td>
-          <td>${t.risk_percent || ""}</td><td>${t.deal || ""}</td><td>${t.status || ""}</td>`;
+          <td>${t.side || t.signal || ""}</td><td>${t.fill || t.price || ""}</td>
+          <td>${t.sl || ""}</td><td>${t.tp || ""}</td><td>${exitPx}</td>
+          <td>${t.volume || ""}</td><td>${pnl}</td><td>${pnlPct}</td><td>${t.deal || ""}</td>
+          <td>${t.status || ""}${t.exit_reason ? " · " + t.exit_reason : ""}</td>`;
         fillBody.appendChild(tr);
       });
     }
@@ -1082,7 +1420,7 @@
         data.kill_switch ? "Release kill switch" : "Kill switch";
       const position = data.position;
       document.getElementById("deltaPosition").textContent = position
-        ? `${position.side || ""} ${position.structure_name || "strangle"} · C${position.call_strike} / P${position.put_strike} · qty ${position.qty}`
+        ? `${position.side || ""} ${position.structure_name || "strangle"} · C${position.call_strike} / P${position.put_strike} · qty ${position.qty}${(position.legs || []).length > 2 ? ` · ${position.legs.length} legs` : ""}`
         : "No open position";
       if (Array.isArray(data.universe)) {
         deltaUniverseItems = data.universe;
@@ -1107,7 +1445,10 @@
 
     async function pollBackend() {
       try {
-        const url = activeDesk === "delta" ? "/api/delta/status" : "/api/status";
+        const bookDate = currentBookDate();
+        const url = activeDesk === "delta"
+          ? "/api/delta/status"
+          : `/api/status?date=${encodeURIComponent(bookDate)}`;
         const response = await fetch(url);
         const data = await response.json();
         if (activeDesk === "delta") applyDelta(data);
@@ -1117,7 +1458,68 @@
       }
     }
 
+    function syncModeToggle(mode) {
+      const paper = document.getElementById("modePaper");
+      const live = document.getElementById("modeLive");
+      if (!paper || !live) return;
+      const isPaper = String(mode || "live").toLowerCase() === "paper";
+      paper.classList.toggle("active", isPaper);
+      live.classList.toggle("active", !isPaper);
+    }
+
+    async function setDeskMode(mode) {
+      const status = document.getElementById("engineControlStatus");
+      if (mode === "live") {
+        const extra = engineRunning
+          ? " The engine is running — the next accepted setup will place a real Dhan order."
+          : "";
+        if (!confirm("Switch today's desk to LIVE?" + extra)) return;
+        const keys = HedgeKeys.loadKeys();
+        const state = HedgeKeys.expiryState(keys);
+        if (state.kind === "missing" || state.kind === "expired") {
+          status.textContent = state.message;
+          status.style.color = "#ff5c7a";
+          window.location.href = "/settings";
+          return;
+        }
+        try { await HedgeKeys.syncToServer(); } catch (error) { /* live POST will fail closed */ }
+      }
+      try {
+        const response = await fetch("/api/desk-mode", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode })
+        });
+        const data = await response.json();
+        if (!response.ok || data.ok === false) {
+          throw new Error(data.error || "Could not change desk mode.");
+        }
+        syncModeToggle(data.desk_mode || mode);
+        status.textContent = data.desk_mode === "paper"
+          ? "Paper for today — no Dhan orders"
+          : "Live for today — Dhan orders on";
+        status.style.color = data.desk_mode === "paper" ? "#f5c542" : "#ff5c7a";
+        await pollBackend();
+      } catch (error) {
+        status.textContent = error.message || String(error);
+        status.style.color = "#ff5c7a";
+      }
+    }
+
     async function toggleEngine() {
+      if (!engineRunning) {
+        const keys = HedgeKeys.loadKeys();
+        const state = HedgeKeys.expiryState(keys);
+        HedgeKeys.renderBanner(document.getElementById("keyExpiryBanner"));
+        if (state.kind === "missing" || state.kind === "expired") {
+          const status = document.getElementById("engineControlStatus");
+          status.textContent = state.message;
+          status.style.color = "#ff5c7a";
+          window.location.href = "/settings";
+          return;
+        }
+        try { await HedgeKeys.syncToServer(); } catch (error) { /* start will fail closed */ }
+      }
       const interval = Number(document.getElementById("intervalSelect").value);
       const risk = Number(document.getElementById("riskInput").value);
       const endpoint = activeDesk === "delta" ? "/api/delta/control" : "/api/control";
@@ -1219,11 +1621,14 @@
         };
         const strategy = document.createElement("select");
         [
-          ["auto_both", "Automatic buy/sell strangle"],
+          ["auto_structure", "Auto: straddle / strangle / condor / fly"],
+          ["auto_both", "Auto (legacy alias)"],
           ["buy_straddle", "Buy straddle"],
           ["buy_strangle", "Buy strangle"],
           ["sell_straddle", "Sell straddle"],
-          ["sell_strangle", "Sell strangle"]
+          ["sell_strangle", "Sell strangle"],
+          ["iron_condor", "Iron condor"],
+          ["butterfly", "Iron butterfly"]
         ].forEach(([value, label]) => {
           const option = document.createElement("option");
           option.value = value;
@@ -1291,7 +1696,6 @@
         deltaUniverseItems = data.document.instruments || [];
         renderDeltaUniverse();
         status.textContent = message;
-        await loadDeltaCharts();
       } catch (error) {
         status.textContent = "Save failed: " + error;
       }
@@ -1373,9 +1777,11 @@
         const data = await response.json();
         if (!response.ok || !data.ok) throw new Error(data.error || "save failed");
         watchlistItems = (data.document && data.document.names) || [];
-        status.textContent = `${message} · ${watchlistItems.length} instrument(s) saved`;
+        const skipped = (data.skipped || []).map((item) => item.name || item.error).filter(Boolean);
+        status.textContent = skipped.length
+          ? `${message} · ${watchlistItems.length} saved · skipped ${skipped.join(" · ")}`
+          : `${message} · ${watchlistItems.length} instrument(s) saved`;
         await pollBackend();
-        await loadCharts();
         return true;
       } catch (error) {
         status.textContent = "Save failed: " + error;
@@ -1471,8 +1877,6 @@
       await saveInputCenter("Cleared");
     }
 
-    const chartViews = {};
-
     function formatNseTime(time) {
       const sec = typeof time === "number" ? time : Number(time && time.timestamp);
       if (!Number.isFinite(sec)) return "";
@@ -1493,299 +1897,34 @@
       };
     }
 
-    function watchLevels() {
-      const map = {};
-      (window._watchRows || []).forEach((row) => {
-        [row.symbol, row.name, row.input_symbol].forEach((value) => {
-          const key = String(value || "").trim().toUpperCase();
-          if (key) map[key] = row;
-        });
-      });
-      return map;
-    }
-
     function chartDomId(item) {
-      return "chart-" + String(item.symbol || item.name).replace(/[^A-Za-z0-9]/g, "");
+      return "chart-" + String(item.symbol || item.name || "").replace(/[^A-Za-z0-9]/g, "");
     }
 
-    function ensureChartCard(item) {
-      const id = chartDomId(item);
-      let col = document.getElementById(id + "-col");
-      if (!col) {
-        col = document.createElement("div");
-        col.className = "col-12 col-md-6 col-xl-3";
-        col.id = id + "-col";
-        col.innerHTML = `<div class="card chart-card h-100">
-          <div class="d-flex justify-content-between align-items-center">
-            <div class="label mb-0">${item.rank || ""}. ${item.symbol || item.name || ""}</div>
-            <div class="chart-last" id="${id}-last">--</div>
-          </div>
-          <div class="small text-secondary mb-1">${item.name || ""}</div>
-          <div class="small mb-1" id="${id}-levels">ENTRY -- · SL -- · TARGET --</div>
-          <div class="chart-shell" id="${id}"></div>
-        </div>`;
-        document.getElementById("chartGrid").appendChild(col);
-      }
-      return id;
-    }
-
-    function upsertChart(item, levels) {
-      const id = ensureChartCard(item);
-      const lastEl = document.getElementById(id + "-last");
-      if (lastEl) lastEl.textContent = item.last != null ? Number(item.last).toFixed(2) : (item.error || "no data");
-      const host = document.getElementById(id);
-      if (!host || typeof LightweightCharts === "undefined") return;
-      const candles = item.candles || [];
-      if (!chartViews[id]) {
-        const chart = LightweightCharts.createChart(host, {
-          layout: {
-            background: { color: "#101826" },
-            textColor: "#ffffff"
-          },
-          grid: {
-            vertLines: { color: "#1c2738" },
-            horzLines: { color: "#1c2738" }
-          },
-          rightPriceScale: { borderColor: "#1c2738" },
-          localization: {
-            timeFormatter: (time) => formatNseTime(time)
-          },
-          timeScale: nseTimeScaleOptions(),
-          width: host.clientWidth,
-          height: host.clientHeight || 280
-        });
-        const series = chart.addCandlestickSeries({
-          upColor: "#3dd68c",
-          downColor: "#ff5c7a",
-          borderVisible: false,
-          wickUpColor: "#3dd68c",
-          wickDownColor: "#ff5c7a"
-        });
-        const scaleBoundsOptions = {
-          color: "rgba(0,0,0,0)",
-          lineVisible: false,
-          priceLineVisible: false,
-          lastValueVisible: false,
-          crosshairMarkerVisible: false
-        };
-        const lowerBound = chart.addLineSeries(scaleBoundsOptions);
-        const upperBound = chart.addLineSeries(scaleBoundsOptions);
-        chartViews[id] = { chart, series, lowerBound, upperBound, lines: [] };
-        new ResizeObserver(() => {
-          chart.applyOptions({ width: host.clientWidth, height: host.clientHeight || 280 });
-        }).observe(host);
-      }
-      const view = chartViews[id];
-      view.chart.applyOptions({
-        localization: { timeFormatter: (time) => formatNseTime(time) },
-        timeScale: nseTimeScaleOptions()
-      });
-      if (candles.length) view.series.setData(candles);
-      const lvl =
-        levels[String(item.symbol || "").toUpperCase()] ||
-        levels[String(item.name || "").toUpperCase()] ||
-        {};
-      const levelEl = document.getElementById(id + "-levels");
-      if (levelEl) {
-        levelEl.innerHTML =
-          `<span style="color:#4ea1ff">ENTRY ${lvl.entry != null ? marketPrice(lvl.entry) : "--"}</span>` +
-          ` · <span style="color:#ff5c7a">SL ${lvl.sl != null ? marketPrice(lvl.sl) : "--"}</span>` +
-          ` · <span style="color:#3dd68c">TARGET ${lvl.tp != null ? marketPrice(lvl.tp) : "--"}</span>`;
-      }
-      (view.lines || []).forEach((line) => {
-        try { view.series.removePriceLine(line); } catch (e) {}
-      });
-      view.lines = [];
-      const levelDefinitions = [
-        [lvl.trigger, "#ffb547", "RANGE BREAK"],
-        [lvl.entry, "#4ea1ff", "ENTRY"],
-        [lvl.sl, "#ff5c7a", "SL"],
-        [lvl.tp, "#3dd68c", "TP"]
-      ];
-      levelDefinitions.forEach(([price, color, title]) => {
-        const value = Number(price);
-        if (!Number.isFinite(value) || value <= 0) return;
-        view.lines.push(view.series.createPriceLine({
-          price: value,
-          color,
-          lineWidth: 1,
-          lineStyle: 2,
-          axisLabelVisible: true,
-          title
-        }));
-      });
-      const protectedLevels = levelDefinitions
-        .map(([price]) => Number(price))
-        .filter((price) => Number.isFinite(price) && price > 0);
-      if (candles.length && protectedLevels.length) {
-        const visiblePrices = protectedLevels.concat(
-          candles.flatMap((bar) => [Number(bar.low), Number(bar.high)])
-            .filter((price) => Number.isFinite(price) && price > 0)
-        );
-        const low = Math.min(...visiblePrices);
-        const high = Math.max(...visiblePrices);
-        const padding = Math.max((high - low) * 0.06, high * 0.001);
-        const boundTime = candles[candles.length - 1].time;
-        view.lowerBound.setData([{ time: boundTime, value: low - padding }]);
-        view.upperBound.setData([{ time: boundTime, value: high + padding }]);
-      } else {
-        view.lowerBound.setData([]);
-        view.upperBound.setData([]);
-      }
-      if (typeof view.series.setMarkers === "function") {
-        const sources = (lvl.breakout_markers || []).slice();
-        if (!sources.length && lvl.alert_state === "BREAKOUT") {
-          sources.push(lvl);
-        }
-        const markers = sources.map((source) => {
-          const markerTime = Number(source.time || source.breakout_time);
-          const nearest = candles
-            .filter((bar) => Number(bar.time) <= markerTime)
-            .slice(-1)[0];
-          if (!nearest) return null;
-          const volume = Number(source.volume_ratio_5m);
-          const markerText = source.volume_ratio_5m != null && Number.isFinite(volume)
-            ? `BREAKOUT · VOL ${volume.toFixed(2)}x`
-            : "BREAKOUT";
-          return {
-            time: nearest.time,
-            position: "belowBar",
-            color: source.volume_spike ? "#3dd68c" : "#4ea1ff",
-            shape: "arrowUp",
-            text: markerText
-          };
-        }).filter(Boolean);
-        view.series.setMarkers(markers);
-      }
-    }
-
-    async function loadCharts() {
-      if (activeDesk !== "dhan") return;
-      const meta = document.getElementById("chartMeta");
-      try {
-        const response = await fetch("/api/charts");
-        const data = await response.json();
-        const charts = data.charts || [];
-        const levels = watchLevels();
-        meta.textContent = (data.ok ? "LIVE 1-min · NSE 09:15–15:30 IST · " : "Chart error · ") + charts.length + " names";
-        const visibleIds = new Set(charts.map(chartDomId));
-        Object.keys(chartViews).forEach((id) => {
-          if (visibleIds.has(id)) return;
-          try { chartViews[id].chart.remove(); } catch (error) {}
-          delete chartViews[id];
-          const col = document.getElementById(id + "-col");
-          if (col) col.remove();
-        });
-        Array.from(document.getElementById("chartGrid").children).forEach((col) => {
-          const id = String(col.id || "").replace(/-col$/, "");
-          if (!visibleIds.has(id)) col.remove();
-        });
-        charts.forEach((item) => upsertChart(item, levels));
-      } catch (error) {
-        if (meta) meta.textContent = "Charts failed: " + error;
-      }
-    }
-
-    const deltaChartViews = {};
-
-    function deltaChartDomId(item) {
-      return "delta-chart-" + String(item.symbol || "").replace(/[^A-Za-z0-9]/g, "");
-    }
-
-    function upsertDeltaChart(item) {
-      const id = deltaChartDomId(item);
-      let col = document.getElementById(id + "-col");
-      if (!col) {
-        col = document.createElement("div");
-        col.className = "col-12 col-md-6 col-xl-3";
-        col.id = id + "-col";
-        col.innerHTML = `<div class="card chart-card h-100">
-          <div class="d-flex justify-content-between align-items-center">
-            <div class="label mb-0">${item.symbol || ""}</div>
-            <div class="chart-last" id="${id}-last">--</div>
-          </div>
-          <div class="small mb-1">${item.market || ""} · ${item.strategy || ""}</div>
-          <div class="chart-shell" id="${id}"></div>
-        </div>`;
-        document.getElementById("deltaChartGrid").appendChild(col);
-      }
-      const last = document.getElementById(id + "-last");
-      if (last) {
-        last.textContent = item.last != null
-          ? Number(item.last).toLocaleString(undefined, { maximumFractionDigits: 8 })
-          : (item.error || "unsupported");
-      }
-      const host = document.getElementById(id);
-      if (!host || typeof LightweightCharts === "undefined") return;
-      if (!deltaChartViews[id]) {
-        const chart = LightweightCharts.createChart(host, {
-          layout: { background: { color: "#101826" }, textColor: "#ffffff" },
-          grid: {
-            vertLines: { color: "#1c2738" },
-            horzLines: { color: "#1c2738" }
-          },
-          rightPriceScale: { borderColor: "#1c2738" },
-          localization: { timeFormatter: (time) => formatNseTime(time) },
-          timeScale: nseTimeScaleOptions(),
-          width: host.clientWidth,
-          height: host.clientHeight || 280
-        });
-        const series = chart.addCandlestickSeries({
-          upColor: "#3dd68c",
-          downColor: "#ff5c7a",
-          borderVisible: false,
-          wickUpColor: "#3dd68c",
-          wickDownColor: "#ff5c7a"
-        });
-        deltaChartViews[id] = { chart, series };
-        new ResizeObserver(() => {
-          chart.applyOptions({ width: host.clientWidth, height: host.clientHeight || 280 });
-        }).observe(host);
-      }
-      if ((item.candles || []).length) {
-        deltaChartViews[id].series.setData(item.candles);
-      }
-    }
-
-    async function loadDeltaCharts() {
-      if (activeDesk !== "delta") return;
-      const meta = document.getElementById("deltaChartMeta");
-      try {
-        const response = await fetch("/api/delta/charts");
-        const data = await response.json();
-        const charts = data.charts || [];
-        meta.textContent = `${data.ok ? "LIVE" : "Chart error"} · 5-minute · 24/7 IST · ${charts.length} markets`;
-        const visible = new Set(charts.map(deltaChartDomId));
-        Object.keys(deltaChartViews).forEach((id) => {
-          if (visible.has(id)) return;
-          try { deltaChartViews[id].chart.remove(); } catch (error) {}
-          delete deltaChartViews[id];
-          const col = document.getElementById(id + "-col");
-          if (col) col.remove();
-        });
-        charts.forEach(upsertDeltaChart);
-      } catch (error) {
-        meta.textContent = "Delta charts failed: " + error;
-      }
-    }
-
-    pollBackend();
+    (async function bootKeys() {
+      const field = document.getElementById("bookDate");
+      if (field) field.value = currentBookDate();
+      try { await HedgeKeys.syncToServer(); } catch (error) { /* banner handles empty keys */ }
+      HedgeKeys.renderBanner(document.getElementById("keyExpiryBanner"));
+      pollBackend();
+      loadIndexOptions();
+    })();
     refreshInputCenter();
-    loadCharts();
     loadMarketPulse();
+    loadPreopenBanner();
     updateLiveClock();
     setInterval(updateLiveClock, 1000);
     setInterval(() => {
-      if (!document.hidden) pollBackend();
-    }, 5000);
-    setInterval(() => {
       if (!document.hidden) {
-        if (activeDesk === "delta") loadDeltaCharts();
-        else loadCharts();
+        pollBackend();
+        HedgeKeys.renderBanner(document.getElementById("keyExpiryBanner"));
       }
     }, 5000);
     setInterval(() => {
-      if (!document.hidden) loadMarketPulse();
+      if (!document.hidden) {
+        loadMarketPulse();
+        loadPreopenBanner();
+      }
     }, 120000);
   </script>
 </body>

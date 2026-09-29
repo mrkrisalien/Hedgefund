@@ -10,12 +10,21 @@ import config
 from broker import (
     fetch_daily_candles,
     fetch_five_minute_candles,
+    fetch_live_session_candles,
     get_quote,
     get_ltp_batch,
     resolve_symbol_cached,
     round_to_tick,
 )
-from risk import as_five_minute_bars, as_resampled_bars, average_true_range, opening_range_entry_price
+from risk import (
+    as_five_minute_bars,
+    as_resampled_bars,
+    as_session_date,
+    attach_ist,
+    average_true_range,
+    opening_range_entry_price,
+    session_rows,
+)
 from watchlist import instrument_requests, load_watchlist
 
 IST = ZoneInfo("Asia/Kolkata")
@@ -88,12 +97,8 @@ def previous_candle_breakout_plan(
     if minute_df is None or minute_df.empty:
         return None, "no 5m bars"
 
-    frame = as_five_minute_bars(minute_df).copy()
-    stamps = pd.to_datetime(frame["time"], utc=True)
-    frame["ist_stamp"] = stamps.dt.tz_convert(IST)
-    frame["ist_date"] = frame["ist_stamp"].dt.date
-    day = frame[frame["ist_date"] == session_date].sort_values("ist_stamp")
-    if day.empty:
+    day = session_rows(as_five_minute_bars(minute_df), session_date)
+    if day is None or day.empty:
         return None, "no session 5m bars"
 
     now = pd.Timestamp.now(tz=IST)
@@ -180,12 +185,8 @@ def first_five_minute_retrace_plan(
     if minute_df is None or minute_df.empty:
         return None, "no 5m bars"
 
-    frame = as_five_minute_bars(minute_df).copy()
-    stamps = pd.to_datetime(frame["time"], utc=True)
-    frame["ist_stamp"] = stamps.dt.tz_convert(IST)
-    frame["ist_date"] = frame["ist_stamp"].dt.date
-    day = frame[frame["ist_date"] == session_date].sort_values("ist_stamp")
-    if day.empty:
+    day = session_rows(as_five_minute_bars(minute_df), session_date)
+    if day is None or day.empty:
         return None, "no session 5m bars"
 
     first = None
@@ -248,11 +249,8 @@ def first_five_minute_retrace_plan(
         and three_src is not None
         and not getattr(three_src, "empty", True)
     ):
-        three = as_resampled_bars(three_src, 3).copy()
-        three_stamps = pd.to_datetime(three["time"], utc=True)
-        three["ist_stamp"] = three_stamps.dt.tz_convert(IST)
-        three["ist_date"] = three["ist_stamp"].dt.date
-        three_day = three[three["ist_date"] == session_date].sort_values("ist_stamp")
+        three = as_resampled_bars(three_src, 3)
+        three_day = session_rows(three, session_date)
         three_done = three_day[three_day["ist_stamp"] < now.floor("3min")]
         for _, bar in three_done.iterrows():
             prior_high = day_high
@@ -347,11 +345,9 @@ def range_breakout_plan(
         return None, "buy-only"
     if minute_df is None or minute_df.empty:
         return None, "no 5m bars"
-    frame = as_five_minute_bars(minute_df).copy()
-    stamps = pd.to_datetime(frame["time"], utc=True)
-    frame["ist_stamp"] = stamps.dt.tz_convert(IST)
-    frame["ist_date"] = frame["ist_stamp"].dt.date
-    day = frame[frame["ist_date"] == session_date].sort_values("ist_stamp")
+    day = session_rows(as_five_minute_bars(minute_df), session_date)
+    if day is None or day.empty:
+        return None, "no session 5m bars"
     now = pd.Timestamp.now(tz=IST)
     current_bucket = now.floor("5min")
     completed = day[day["ist_stamp"] < current_bucket]
@@ -424,11 +420,14 @@ def range_breakout_plan(
 def _daily_prior(daily_df, session_date):
     if daily_df is None or daily_df.empty:
         return None
-    frame = daily_df.copy()
-    if "ist_date" not in frame.columns:
-        stamps = pd.to_datetime(frame["time"], utc=True)
-        frame["ist_date"] = stamps.dt.tz_convert(IST).dt.date
-    prior = frame[frame["ist_date"] < session_date] if session_date else frame
+    frame = attach_ist(daily_df) if "time" in daily_df.columns else daily_df.copy()
+    want = as_session_date(session_date).isoformat()
+    if "ist_date" in frame.columns:
+        frame = frame.copy()
+        frame["ist_date"] = frame["ist_date"].map(lambda value: str(value)[:10])
+        prior = frame[frame["ist_date"] < want] if session_date else frame
+    else:
+        prior = frame
     if len(prior) < 12:
         prior = frame.iloc[:-1] if len(frame) > 12 else frame
     return prior.tail(LOOKBACK + 5)
@@ -557,7 +556,7 @@ def row_rank_penalty(chase):
 
 
 def analyze_watchlist(session_date=None):
-    session_date = session_date or datetime.now(IST).date()
+    session_date = as_session_date(session_date)
     doc = load_watchlist()
     source_rows = sorted(
         doc.get("names") or [], key=lambda row: int(row.get("rank") or 99)
@@ -601,7 +600,12 @@ def analyze_watchlist(session_date=None):
             )
             continue
         symbol = resolved["trading_symbol"]
-        live_price = live_prices.get(symbol) or live_prices.get(resolved.get("symbol"))
+        live_price = (
+            live_prices.get(symbol)
+            or live_prices.get(resolved.get("symbol"))
+            or live_prices.get(resolved.get("display_symbol"))
+            or live_prices.get(str(resolved.get("security_id") or ""))
+        )
         if not live_price:
             rows.append(
                 {
@@ -623,6 +627,8 @@ def analyze_watchlist(session_date=None):
             )
             continue
         five = fetch_five_minute_candles(resolved, bars=80)
+        if five is None or five.empty:
+            five = fetch_live_session_candles(resolved, interval=5)
         daily = (
             fetch_daily_candles(resolved, bars=40)
             if strategy not in {"breakout", "range_breakout"}
@@ -630,7 +636,6 @@ def analyze_watchlist(session_date=None):
         )
         live_orb = (
             bool(getattr(config, "LIVE_FIXED_PROTECTION_ENABLED", False))
-            and not bool(getattr(config, "PAPER_TRADE", False))
             and resolved.get("exchange") == "NSE"
             and resolved.get("instrument") == "EQUITY"
             and bool(getattr(config, "REQUIRE_FIRST_5M_RETRACE", True))
@@ -681,9 +686,8 @@ def analyze_watchlist(session_date=None):
         risk_rs = float(getattr(config, "CATALYST_RISK_RS", 2000))
         qty = 0
         if plan:
-            live_equal_risk = (
-                bool(getattr(config, "LIVE_FIXED_PROTECTION_ENABLED", False))
-                and not bool(getattr(config, "PAPER_TRADE", False))
+            live_equal_risk = bool(
+                getattr(config, "LIVE_FIXED_PROTECTION_ENABLED", False)
             )
             if live_equal_risk and plan.get("entry") is not None and plan.get("sl") is not None:
                 entry = float(plan["entry"])
@@ -783,6 +787,7 @@ def catalyst_candidates(session_date=None):
                     "symbol": row["symbol"],
                     "exchange": row.get("exchange") or "NSE",
                     "instrument": row.get("instrument") or "EQUITY",
+                    "security_id": row.get("security_id"),
                 },
                 "display": row["symbol"],
                 "sector": mapped_sector or f"WATCH:{row.get('symbol')}",

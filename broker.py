@@ -2,12 +2,15 @@ from datetime import datetime, time as clock_time, timedelta
 from functools import lru_cache
 from pathlib import Path
 from threading import Lock
+from zoneinfo import ZoneInfo
 import time
 
 import pandas as pd
 from dhanhq import DhanContext, dhanhq
 
 import config
+
+IST = ZoneInfo("Asia/Kolkata")
 
 
 EXCHANGE_SEGMENT_MAP = {
@@ -58,13 +61,17 @@ def _require_credentials():
 
     if not client_id or not access_token:
         raise RuntimeError(
-            "Dhan credentials are missing. Set DHAN_CLIENT_ID and "
-            "DHAN_ACCESS_TOKEN in config.py (or as environment variables). "
-            "Generate an access token from the Dhan web/app: "
-            "My Profile -> DhanHQ Trading APIs."
+            "Dhan credentials are missing or expired. Open Settings, "
+            "paste Client ID and Access Token, and save. Generate a "
+            "token from Dhan: My Profile -> DhanHQ Trading APIs."
         )
 
     return client_id, access_token
+
+
+def reset_client():
+    global _client
+    _client = None
 
 
 def get_client():
@@ -128,7 +135,15 @@ def require_success(response, action):
 
     status = str(response.get("status", "")).strip().lower()
     if status and status not in ("success", "ok"):
-        remarks = response.get("remarks") or response.get("message") or response
+        remarks = response.get("remarks") or response.get("message")
+        if isinstance(remarks, dict):
+            remarks = (
+                remarks.get("error_message")
+                or remarks.get("message")
+                or remarks.get("error_type")
+            )
+        if not remarks:
+            remarks = "Dhan returned an empty error"
         raise RuntimeError(f"{action} failed: {remarks}")
 
     if "data" in response and response["data"] not in (None, ""):
@@ -238,7 +253,97 @@ def _normalize_symbol_request(symbol):
     return trading_symbol, preferred_exchange, preferred_instrument
 
 
+def _row_to_instrument(row, trading_symbol):
+    exchange = str(row["SEM_EXM_EXCH_ID"]).upper()
+    instrument = str(row["SEM_INSTRUMENT_NAME"]).upper()
+    resolved_trading_symbol = str(row.get("SEM_TRADING_SYMBOL") or trading_symbol)
+    underlying = resolved_trading_symbol.upper().split("-")[0]
+    value_multiplier = (
+        contract_value_multiplier(underlying) if exchange == "MCX" else 1.0
+    )
+    lot_size = 1
+    try:
+        lot_size = max(1, int(float(row.get("SEM_LOT_UNITS", 1) or 1)))
+    except (TypeError, ValueError):
+        lot_size = 1
+    tick_size = 0.05
+    try:
+        tick_size = float(row.get("SEM_TICK_SIZE", 5) or 5) / 100.0
+    except (TypeError, ValueError):
+        tick_size = 0.05
+    return {
+        "symbol": trading_symbol,
+        "security_id": str(int(float(row["SEM_SMST_SECURITY_ID"]))),
+        "exchange": exchange,
+        "instrument": instrument,
+        "exchange_segment": _exchange_segment(exchange, instrument),
+        "lot_size": lot_size,
+        "value_multiplier": value_multiplier,
+        "tick_size": tick_size,
+        "display_symbol": str(row.get("SEM_CUSTOM_SYMBOL") or trading_symbol),
+        "trading_symbol": resolved_trading_symbol,
+    }
+
+
+def _synthetic_option(request):
+    from watchlist import infer_option_market, normalize_option_contract
+
+    contract = normalize_option_contract(request.get("symbol")) or str(
+        request.get("symbol") or ""
+    ).strip().upper()
+    exchange = str(request.get("exchange") or "").upper()
+    instrument = str(request.get("instrument") or "").upper()
+    if not exchange or not instrument:
+        inferred = infer_option_market(contract) or ("NSE", "OPTIDX")
+        exchange = exchange or inferred[0]
+        instrument = instrument or inferred[1]
+    root = contract.split()[0] if contract else ""
+    lot_size = 65
+    if root == "BANKNIFTY":
+        lot_size = 30
+    elif root in {"SENSEX", "BANKEX", "SENSEX50"}:
+        lot_size = 20
+    elif root == "FINNIFTY":
+        lot_size = 60
+    return {
+        "symbol": contract,
+        "security_id": str(int(float(request["security_id"]))),
+        "exchange": exchange,
+        "instrument": instrument,
+        "exchange_segment": _exchange_segment(exchange, instrument),
+        "lot_size": lot_size,
+        "value_multiplier": 1.0,
+        "tick_size": 0.05,
+        "display_symbol": contract,
+        "trading_symbol": contract,
+    }
+
+
+def _resolve_by_security_id(request):
+    sid = str(request.get("security_id") or "").strip()
+    if not sid:
+        return None
+    try:
+        sid = str(int(float(sid)))
+    except (TypeError, ValueError):
+        return None
+    master = load_security_master()
+    ids = pd.to_numeric(master["SEM_SMST_SECURITY_ID"], errors="coerce")
+    matches = master[ids == int(sid)]
+    if matches.empty:
+        col = master["SEM_SMST_SECURITY_ID"].astype(str)
+        matches = master[(col == sid) | (col == sid + ".0")]
+    if matches.empty:
+        return _synthetic_option(request)
+    return _row_to_instrument(matches.iloc[0], str(request.get("symbol") or sid))
+
+
 def resolve_symbol(symbol):
+    if isinstance(symbol, dict) and symbol.get("security_id"):
+        found = _resolve_by_security_id(symbol)
+        if found:
+            return found
+
     trading_symbol, preferred_exchange, preferred_instrument = (
         _normalize_symbol_request(symbol)
     )
@@ -246,18 +351,27 @@ def resolve_symbol(symbol):
     if not trading_symbol:
         raise RuntimeError("Empty trading symbol.")
 
+    from watchlist import option_lookup_names
+
+    expiry = symbol.get("expiry") if isinstance(symbol, dict) else None
+    lookup_names = option_lookup_names(trading_symbol, expiry) or [trading_symbol]
+
     master = load_security_master()
     trading_col = master["SEM_TRADING_SYMBOL"].astype(str).str.upper()
     custom_col = master["SEM_CUSTOM_SYMBOL"].astype(str).str.upper()
 
-    matches = master[
-        (trading_col == trading_symbol) | (custom_col == trading_symbol)
-    ].copy()
+    matches = pd.DataFrame()
+    for name in lookup_names:
+        hit = master[(trading_col == name) | (custom_col == name)]
+        if not hit.empty:
+            matches = hit.copy()
+            trading_symbol = name
+            break
 
     if matches.empty:
         matches = master[
             trading_col.str.startswith(trading_symbol + "-")
-            | custom_col.str.contains(trading_symbol, na=False)
+            | custom_col.str.contains(trading_symbol.replace(" ", r"\s+"), na=False, regex=True)
         ].copy()
 
     if matches.empty:
@@ -282,58 +396,33 @@ def resolve_symbol(symbol):
     if matches["_expiry"].notna().any():
         matches = matches.sort_values("_expiry", ascending=True)
 
-    row = matches.iloc[0]
-    exchange = str(row["SEM_EXM_EXCH_ID"]).upper()
-    instrument = str(row["SEM_INSTRUMENT_NAME"]).upper()
-    resolved_trading_symbol = str(
-        row.get("SEM_TRADING_SYMBOL") or trading_symbol
-    )
-    underlying = resolved_trading_symbol.upper().split("-")[0]
-    value_multiplier = (
-        contract_value_multiplier(underlying) if exchange == "MCX" else 1.0
-    )
+    return _row_to_instrument(matches.iloc[0], trading_symbol)
 
-    lot_size = 1
-    try:
-        lot_size = max(1, int(float(row.get("SEM_LOT_UNITS", 1) or 1)))
-    except (TypeError, ValueError):
-        lot_size = 1
 
-    tick_size = 0.05
-    try:
-        # Dhan's compact security master stores tick sizes in paise. Examples:
-        # NSE cash 5 -> Rs 0.05, MCX CRUDEOIL 100 -> Rs 1.00.
-        tick_size = float(row.get("SEM_TICK_SIZE", 5) or 5) / 100.0
-    except (TypeError, ValueError):
-        tick_size = 0.05
-
-    return {
+@lru_cache(maxsize=256)
+def _resolve_symbol_cached(trading_symbol, preferred_exchange, preferred_instrument, security_id, expiry):
+    request = {
         "symbol": trading_symbol,
-        "security_id": str(int(float(row["SEM_SMST_SECURITY_ID"]))),
-        "exchange": exchange,
-        "instrument": instrument,
-        "exchange_segment": _exchange_segment(exchange, instrument),
-        "lot_size": lot_size,
-        "value_multiplier": value_multiplier,
-        "tick_size": tick_size,
-        "display_symbol": str(row.get("SEM_CUSTOM_SYMBOL") or trading_symbol),
-        "trading_symbol": resolved_trading_symbol,
+        "exchange": preferred_exchange,
+        "instrument": preferred_instrument,
     }
-
-
-@lru_cache(maxsize=64)
-def _resolve_symbol_cached(trading_symbol, preferred_exchange, preferred_instrument):
-    return resolve_symbol(
-        {
-            "symbol": trading_symbol,
-            "exchange": preferred_exchange,
-            "instrument": preferred_instrument,
-        }
-    )
+    if security_id:
+        request["security_id"] = security_id
+    if expiry:
+        request["expiry"] = expiry
+    return resolve_symbol(request)
 
 
 def resolve_symbol_cached(symbol):
-    return _resolve_symbol_cached(*_normalize_symbol_request(symbol))
+    trading_symbol, preferred_exchange, preferred_instrument = _normalize_symbol_request(symbol)
+    security_id = ""
+    expiry = ""
+    if isinstance(symbol, dict):
+        security_id = str(symbol.get("security_id") or "").strip()
+        expiry = str(symbol.get("expiry") or "").strip()
+    return _resolve_symbol_cached(
+        trading_symbol, preferred_exchange, preferred_instrument, security_id, expiry
+    )
 
 
 def round_to_tick(price, tick_size):
@@ -347,26 +436,42 @@ def round_to_tick(price, tick_size):
     return round(rounded, max(decimals, 2))
 
 
+def _ist_today():
+    return datetime.now(IST).date()
+
+
+def _parse_candle_times(raw):
+    numeric = pd.to_numeric(raw, errors="coerce")
+    if numeric.notna().any():
+        median = float(numeric.dropna().median())
+        unit = "ms" if median >= 1e11 else "s"
+        parsed = pd.to_datetime(numeric, unit=unit, utc=True, errors="coerce")
+        if parsed.notna().any():
+            return parsed
+    return pd.to_datetime(raw, utc=True, errors="coerce")
+
+
 def _candles_to_dataframe(payload):
     if isinstance(payload, pd.DataFrame):
         frame = payload.copy()
     elif isinstance(payload, dict):
+        inner = payload.get("data") if isinstance(payload.get("data"), dict) else payload
         lengths = [
-            len(payload[key])
+            len(inner[key])
             for key in ("open", "high", "low", "close", "timestamp")
-            if key in payload and isinstance(payload[key], list)
+            if key in inner and isinstance(inner[key], list)
         ]
         if not lengths or min(lengths) == 0:
             return pd.DataFrame()
 
         frame = pd.DataFrame(
             {
-                "time": payload.get("timestamp", []),
-                "open": payload.get("open", []),
-                "high": payload.get("high", []),
-                "low": payload.get("low", []),
-                "close": payload.get("close", []),
-                "volume": payload.get("volume", []),
+                "time": inner.get("timestamp", []),
+                "open": inner.get("open", []),
+                "high": inner.get("high", []),
+                "low": inner.get("low", []),
+                "close": inner.get("close", []),
+                "volume": inner.get("volume", []),
             }
         )
     elif isinstance(payload, list):
@@ -380,10 +485,10 @@ def _candles_to_dataframe(payload):
                 frame = frame.rename(columns={candidate: "time"})
                 break
 
-    frame["time"] = pd.to_datetime(frame["time"], unit="s", utc=True, errors="coerce")
-    if frame["time"].isna().all():
-        frame["time"] = pd.to_datetime(frame["time"], utc=True, errors="coerce")
+    if "time" not in frame.columns:
+        return pd.DataFrame()
 
+    frame["time"] = _parse_candle_times(frame["time"])
     return frame.dropna(subset=["time"]).sort_values("time").reset_index(drop=True)
 
 
@@ -421,10 +526,12 @@ def _ohlc_cache_path(instrument, kind, interval, from_date, to_date):
     return OHLC_CACHE_DIR / f"{sid}_{kind}_{interval}_{from_date}_{to_date}.pkl"
 
 
-def _load_ohlc_cache(path):
+def _load_ohlc_cache(path, max_age=None):
     if not path.exists():
         return None
     try:
+        if max_age is not None and (time.time() - path.stat().st_mtime) > float(max_age):
+            return None
         return pd.read_pickle(path)
     except Exception:
         return None
@@ -469,17 +576,14 @@ def fetch_historical_daily(instrument, from_date, to_date):
 
 
 def _intraday_once(instrument, from_date, to_date, interval):
-    from zoneinfo import ZoneInfo
-
-    ist = ZoneInfo("Asia/Kolkata")
-    now = datetime.now(ist)
+    now = datetime.now(IST)
     start_d = _as_date(from_date)
     end_d = _as_date(to_date)
-    start = datetime.combine(start_d, clock_time(9, 15), tzinfo=ist)
+    start = datetime.combine(start_d, clock_time(9, 15), tzinfo=IST)
     if end_d >= now.date():
         stop = now
     else:
-        stop = datetime.combine(end_d, clock_time(15, 30), tzinfo=ist)
+        stop = datetime.combine(end_d, clock_time(15, 30), tzinfo=IST)
     if stop < start:
         stop = start
     client = get_client()
@@ -502,8 +606,9 @@ def fetch_historical_intraday(instrument, from_date, to_date, interval=60, skip_
     to_date = _as_date(to_date)
     interval = int(interval or 60)
     cache_path = _ohlc_cache_path(instrument, "i", interval, from_date, to_date)
+    live_day = to_date >= _ist_today() and interval <= 5
     if not skip_cache:
-        cached = _load_ohlc_cache(cache_path)
+        cached = _load_ohlc_cache(cache_path, max_age=45.0 if live_day else None)
         if cached is not None and not cached.empty:
             return cached
 
@@ -544,32 +649,36 @@ def fetch_historical_hourly(instrument, from_date, to_date):
 
 
 def fetch_daily_candles(instrument, bars=10):
-    to_date = datetime.now().date()
+    to_date = _ist_today()
     from_date = to_date - timedelta(days=max(30, bars * 3))
     return fetch_historical_daily(instrument, from_date, to_date).tail(bars)
 
 
 def fetch_hourly_candles(instrument, bars=24):
-    to_date = datetime.now().date()
+    to_date = _ist_today()
     days = 14 if bars <= 40 else max(45, int(bars / 5) + 5)
     from_date = to_date - timedelta(days=days)
     return fetch_historical_hourly(instrument, from_date, to_date).tail(bars)
 
 
 def fetch_five_minute_candles(instrument, bars=80):
-    to_date = datetime.now().date()
+    to_date = _ist_today()
     from_date = to_date - timedelta(days=10)
-    return fetch_historical_intraday(
-        instrument, from_date, to_date, interval=5
-    ).tail(bars)
+    frame = fetch_historical_intraday(instrument, from_date, to_date, interval=5)
+    if frame is None or frame.empty:
+        frame = fetch_live_session_candles(instrument, interval=5)
+    if frame is None or frame.empty:
+        return pd.DataFrame()
+    stamps = pd.to_datetime(frame["time"], utc=True)
+    today_rows = frame.loc[stamps.dt.tz_convert(IST).dt.strftime("%Y-%m-%d") == to_date.isoformat()]
+    if not today_rows.empty:
+        return today_rows.reset_index(drop=True)
+    return frame.tail(bars).reset_index(drop=True)
 
 
 def fetch_live_session_candles(instrument, interval=1):
     """Current IST session, falling back to the latest session in seven days."""
-    from zoneinfo import ZoneInfo
-
-    ist = ZoneInfo("Asia/Kolkata")
-    today = datetime.now(ist).date()
+    today = _ist_today()
     interval = int(interval or 1)
     frame = fetch_historical_intraday(
         instrument, today, today, interval=interval, skip_cache=True
@@ -584,8 +693,8 @@ def fetch_live_session_candles(instrument, interval=1):
         )
     if frame is None or frame.empty:
         return pd.DataFrame()
-    stamps = pd.to_datetime(frame["time"], utc=True).dt.tz_convert(ist)
-    today_rows = frame.loc[stamps.dt.date == today]
+    stamps = pd.to_datetime(frame["time"], utc=True).dt.tz_convert(IST)
+    today_rows = frame.loc[stamps.dt.strftime("%Y-%m-%d") == today.isoformat()]
     if not today_rows.empty:
         return today_rows.reset_index(drop=True)
     latest_session = max(stamps.dt.date)
@@ -724,6 +833,10 @@ def get_ltp_batch(instruments):
                     if instrument and last_price > 0:
                         symbol = instrument["trading_symbol"]
                         prices[symbol] = last_price
+                        prices[instrument.get("symbol") or symbol] = last_price
+                        if instrument.get("display_symbol"):
+                            prices[instrument["display_symbol"]] = last_price
+                        prices[str(security_id)] = last_price
                         _LTP_CACHE[(segment, str(security_id))] = (now, last_price)
             for key, instrument in lookup.items():
                 symbol = instrument["trading_symbol"]
@@ -773,6 +886,43 @@ def get_trade_book(order_id=None):
         if isinstance(data, list):
             return data
     return []
+
+
+def option_expiry_list(scrip, segment="IDX_I"):
+    payload = require_success(
+        get_client().expiry_list(int(scrip), segment),
+        "option expiry list",
+    )
+    if isinstance(payload, dict):
+        payload = (
+            payload.get("data")
+            or payload.get("expiry")
+            or payload.get("expiryList")
+            or payload
+        )
+    return payload
+
+
+def _unwrap_option_chain(payload):
+    current = payload
+    for _ in range(4):
+        if not isinstance(current, dict):
+            return {}
+        if isinstance(current.get("oc"), dict) and current.get("oc"):
+            return current
+        inner = current.get("data")
+        if inner is None or inner is current:
+            break
+        current = inner
+    return payload if isinstance(payload, dict) else {}
+
+
+def option_chain(scrip, expiry, segment="IDX_I"):
+    payload = require_success(
+        get_client().option_chain(int(scrip), segment, str(expiry)),
+        "option chain",
+    )
+    return _unwrap_option_chain(payload)
 
 
 def close_position_market(position):

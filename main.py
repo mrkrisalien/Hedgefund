@@ -6,7 +6,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from fastapi import FastAPI
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -43,6 +43,8 @@ from memory_store import (
 )
 from rung_trail import manage_rung_trails
 from market_pulse import market_pulse
+from preopen import build_briefing, load_saved as load_preopen
+from index_option_picks import build_picks as build_index_option_picks
 from morning_scan import morning_universe
 from paper_book import (
     get_eod_report as paper_eod_report,
@@ -51,9 +53,24 @@ from paper_book import (
     refresh_positions as refresh_paper_positions,
     save_session as save_paper_session,
     session_state as paper_session_state,
+    available_dates as paper_available_dates,
+    day_pnl_stats as paper_day_pnl_stats,
+    latest_levels_by_symbol as paper_levels_by_symbol,
+    today_pnl_stats as paper_today_pnl_stats,
     trade_history as paper_trade_history,
+    trade_history_recent as paper_trade_history_recent,
     write_due_eod_reports,
 )
+from live_book import (
+    available_dates as live_available_dates,
+    day_pnl_stats as live_day_pnl_stats,
+    import_from_memory as import_live_book,
+    latest_levels_by_symbol as live_levels_by_symbol,
+    trade_history as live_trade_history,
+)
+from credentials import apply_keys, clear_keys, dhan_ready, public_status as credentials_status
+from desk_mode import apply_saved_desk_mode, set_desk_mode, today_ist
+from desk_snapshot import restore_snapshot, save_snapshot
 from charts_feed import invalidate_chart_cache, watchlist_charts
 from risk import book_loss_hit, pick_best_candidates, session_square_off_reason
 from trade_memory import LIVE_MEMORY
@@ -76,6 +93,12 @@ SCAN_CUTOFF = time.fromisoformat(
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "templates"
 INDEX_FILE = TEMPLATES_DIR / "index.html"
+PLAN_FILE = TEMPLATES_DIR / "plan.html"
+COMMAND_FILE = TEMPLATES_DIR / "command.html"
+CHARTS_FILE = TEMPLATES_DIR / "charts.html"
+SETTINGS_FILE = TEMPLATES_DIR / "settings.html"
+STATIC_DIR = BASE_DIR / "static"
+KEYS_JS_FILE = TEMPLATES_DIR / "keys.js"
 
 
 bot_state = {
@@ -110,7 +133,12 @@ bot_state = {
     "watchlist": [],
     "breakout_alerts": [],
     "confirmed_fills": 0,
+    "desk_mode": "live",
+    "desk_mode_date": "",
 }
+
+apply_saved_desk_mode(bot_state)
+restore_snapshot(bot_state)
 
 
 class ControlRequest(BaseModel):
@@ -127,6 +155,8 @@ class WatchlistName(BaseModel):
     symbol: str | None = None
     exchange: str | None = None
     instrument: str | None = None
+    security_id: str | None = None
+    expiry: str | None = None
     strategy: str = "breakout"
     catalyst: str = ""
     chase_risk: str = "medium"
@@ -158,11 +188,38 @@ class AuditRequest(BaseModel):
     force: bool = False
 
 
+class DeskModeRequest(BaseModel):
+    mode: str
+
+
+class SettingsKeysRequest(BaseModel):
+    dhan_client_id: str | None = None
+    dhan_access_token: str | None = None
+    groq_api_key: str | None = None
+    deepseek_api_key: str | None = None
+    delta_api_key: str | None = None
+    delta_api_secret: str | None = None
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    restore_snapshot(bot_state)
+    if not dhan_ready():
+        bot_state["watchlist"] = load_watchlist().get("names") or []
+    try:
+        imported = import_live_book()
+        if imported:
+            print(f"[LIVE BOOK] Imported {imported} live memory row(s).")
+    except Exception as error:
+        print(f"[LIVE BOOK] Import skipped: {error}")
     if getattr(config, "PAPER_TRADE", False):
         _restore_paper_session()
     try:
+        if not dhan_ready():
+            raise RuntimeError(
+                "Dhan keys are not loaded. Open Settings, save Client ID "
+                "and Access Token, then start the engine."
+            )
         _, funds = connect()
         bot_state["equity"] = get_equity(funds)
         if (
@@ -206,6 +263,7 @@ async def lifespan(app: FastAPI):
     paper_task = asyncio.create_task(paper_maintenance_loop())
     yield
     _save_paper_session()
+    save_snapshot(bot_state, min_interval=0)
     dhan_task.cancel()
     alert_task.cancel()
     delta_task.cancel()
@@ -228,6 +286,12 @@ if DESIGN_ASSET_DIR.exists():
         StaticFiles(directory=str(DESIGN_ASSET_DIR)),
         name="design-assets",
     )
+if STATIC_DIR.exists():
+    app.mount(
+        "/app-static",
+        StaticFiles(directory=str(STATIC_DIR)),
+        name="app-static",
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -235,6 +299,114 @@ async def home():
     if INDEX_FILE.exists():
         return HTMLResponse(INDEX_FILE.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>Dashboard not found</h1>", status_code=500)
+
+
+@app.get("/command", response_class=HTMLResponse)
+async def command_page():
+    if COMMAND_FILE.exists():
+        return HTMLResponse(COMMAND_FILE.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>Command not found</h1>", status_code=500)
+
+
+@app.get("/plan", response_class=HTMLResponse)
+async def plan_page():
+    if PLAN_FILE.exists():
+        return HTMLResponse(PLAN_FILE.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>Trade plan not found</h1>", status_code=500)
+
+
+@app.get("/charts", response_class=HTMLResponse)
+async def charts_page():
+    if CHARTS_FILE.exists():
+        return HTMLResponse(CHARTS_FILE.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>Charts not found</h1>", status_code=500)
+
+
+@app.get("/settings", response_class=HTMLResponse)
+async def settings_page():
+    if SETTINGS_FILE.exists():
+        return HTMLResponse(SETTINGS_FILE.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>Settings not found</h1>", status_code=500)
+
+
+@app.get("/static/keys.js")
+async def keys_script():
+    return FileResponse(KEYS_JS_FILE, media_type="application/javascript")
+
+
+@app.get("/api/settings")
+async def get_settings():
+    return {"ok": True, "credentials": credentials_status()}
+
+
+@app.post("/api/settings")
+async def save_settings(request: SettingsKeysRequest):
+    try:
+        status = apply_keys(request.model_dump())
+    except ValueError as error:
+        return {"ok": False, "error": str(error), "credentials": credentials_status()}
+    if dhan_ready():
+        try:
+            _, funds = connect()
+            bot_state["equity"] = get_equity(funds)
+            bot_state["broker_authenticated"] = True
+            bot_state["broker_error"] = ""
+        except Exception as error:
+            bot_state["broker_authenticated"] = False
+            bot_state["broker_error"] = str(error)
+            return {
+                "ok": False,
+                "error": f"Saved locally, but Dhan rejected the keys: {error}",
+                "credentials": status,
+            }
+    from delta_engine import delta_state
+
+    delta_state["keys_configured"] = bool(status.get("delta_configured"))
+    return {"ok": True, "credentials": status, "bot_state": bot_state}
+
+
+@app.post("/api/desk-mode")
+async def change_desk_mode(request: DeskModeRequest):
+    mode = str(request.mode or "").strip().lower()
+    if mode not in {"paper", "live"}:
+        return {
+            "ok": False,
+            "error": "Mode must be paper or live.",
+            "bot_state": bot_state,
+        }
+    if mode == "live" and not dhan_ready():
+        return {
+            "ok": False,
+            "error": (
+                "Live blocked: Dhan keys missing or expired. "
+                "Open Settings and save a fresh access token."
+            ),
+            "bot_state": bot_state,
+            "credentials": credentials_status(),
+        }
+    chosen = set_desk_mode(mode, bot_state)
+    if chosen == "paper":
+        _restore_paper_session()
+    print(f"[SYSTEM] Desk mode for {today_ist()}: {chosen.upper()}")
+    return {
+        "ok": True,
+        "desk_mode": chosen,
+        "paper_trade": chosen == "paper",
+        "desk_mode_date": today_ist(),
+        "bot_state": bot_state,
+    }
+
+
+@app.post("/api/settings/clear")
+async def reset_settings():
+    status = clear_keys()
+    bot_state["broker_authenticated"] = False
+    bot_state["broker_error"] = "Keys cleared from server memory."
+    bot_state["is_running"] = False
+    from delta_engine import delta_state
+
+    delta_state["keys_configured"] = False
+    return {"ok": True, "credentials": status}
 
 
 @app.get("/favicon.ico")
@@ -251,11 +423,46 @@ async def get_market_pulse():
         return {"ok": False, "error": str(error)}
 
 
+@app.get("/api/preopen")
+async def get_preopen(force: bool = False):
+    try:
+        payload = await asyncio.to_thread(build_briefing, force)
+        return payload
+    except Exception as error:
+        saved = load_preopen()
+        if saved:
+            saved["ok"] = True
+            saved["stale"] = True
+            saved["error"] = str(error)
+            return saved
+        return {"ok": False, "error": str(error)}
+
+
+@app.get("/api/index-options")
+async def get_index_options(force: bool = False):
+    try:
+        payload = await asyncio.to_thread(build_index_option_picks, force)
+        return payload
+    except Exception as error:
+        return {"ok": False, "error": str(error), "rows": []}
+
+
 @app.post("/api/control")
 async def control_bot(request: ControlRequest):
     action = (request.action or "").lower()
     requested_start = action == "start" or request.is_running is True
     if requested_start:
+        if not dhan_ready():
+            bot_state["is_running"] = False
+            return {
+                "success": False,
+                "error": (
+                    "Start blocked: Dhan keys missing or expired. "
+                    "Open Settings and save a fresh access token."
+                ),
+                "bot_state": bot_state,
+                "credentials": credentials_status(),
+            }
         cash_pnl, mcx_pnl = realized_pnl_today()
         if getattr(config, "PAPER_TRADE", False):
             cash_pnl += paper_realized_pnl_today()
@@ -309,40 +516,178 @@ async def control_bot(request: ControlRequest):
     return {"success": True, "bot_state": bot_state}
 
 
+def _book_mode():
+    return "paper" if getattr(config, "PAPER_TRADE", False) else "live"
+
+
+def _normalize_book_date(value=None):
+    text = str(value or "").strip()[:10]
+    return text if len(text) == 10 else today_ist()
+
+
+def _attach_selected_book(book_date, dhan_cash=0.0):
+    mode = _book_mode()
+    is_today = book_date == today_ist()
+    if mode == "paper":
+        history = paper_trade_history(book_date)
+        paper_pos = paper_open_positions() if is_today else []
+        existing = list(bot_state.get("open_positions") or [])
+        if not is_today:
+            existing = []
+        seen = {str(row.get("ticket")) for row in existing}
+        bot_state["open_positions"] = existing + [
+            row for row in paper_pos if str(row.get("ticket")) not in seen
+        ]
+        bot_state["cash_pnl_today"] = (
+            float(dhan_cash or 0) + paper_realized_pnl_today()
+            if is_today
+            else float(paper_day_pnl_stats(book_date).get("realized_pnl") or 0)
+        )
+        prefix = "paper"
+    else:
+        history = live_trade_history(book_date)
+        if not is_today:
+            bot_state["open_positions"] = []
+        bot_state["trade_history"] = history
+        prefix = "live"
+    bot_state["trade_history"] = history
+    source = None
+    if mode == "paper":
+        open_now = [row for row in (bot_state.get("open_positions") or []) if row.get("paper")]
+        source = open_now[0] if open_now else (history[-1] if history else None)
+    elif history:
+        source = history[-1]
+    if source:
+        bot_state["last_entry_price"] = source.get("price") or source.get("fill")
+        bot_state["last_stop_loss"] = source.get("sl")
+        bot_state["last_take_profit"] = source.get("tp")
+        bot_state["last_signal"] = source.get("side") or source.get("signal") or "BUY"
+        symbol = source.get("symbol") or source.get("asset") or prefix
+        exit_px = source.get("exit_price")
+        logic = (
+            f"{symbol}: {prefix} ENTRY {bot_state['last_entry_price']} · "
+            f"SL {source.get('sl')} · TP {source.get('tp')}"
+        )
+        if exit_px is not None:
+            logic += (
+                f" · EXIT {exit_px} {source.get('exit_reason') or ''} · "
+                f"P&L Rs {source.get('pnl')}"
+            )
+        else:
+            logic += " · OPEN"
+        bot_state["last_logic"] = logic
+    else:
+        bot_state["last_entry_price"] = None
+        bot_state["last_stop_loss"] = None
+        bot_state["last_take_profit"] = None
+        bot_state["last_signal"] = "HOLD"
+        bot_state["last_logic"] = f"No {prefix} fills saved for {book_date}."
+
+
+def _book_pnl_payload(book_date):
+    mode = _book_mode()
+    start = float(bot_state.get("day_start_equity") or 0)
+    equity = float(bot_state.get("equity") or 0)
+    if mode == "paper":
+        use_notional = equity <= 0 or not bot_state.get("broker_authenticated") or book_date != today_ist()
+        stats = paper_day_pnl_stats(book_date, 0 if use_notional else start)
+    else:
+        use_notional = equity <= 0 or book_date != today_ist()
+        stats = live_day_pnl_stats(book_date, 0 if use_notional else start)
+        if book_date == today_ist():
+            cash = float(bot_state.get("cash_pnl_today") or 0)
+            mcx = float(bot_state.get("mcx_pnl_today") or 0)
+            if cash or mcx:
+                stats["realized_pnl"] = round(cash + mcx, 2)
+                stats["today_pnl"] = round(
+                    float(stats.get("realized_pnl") or 0) + float(stats.get("open_pnl") or 0),
+                    2,
+                )
+    start = float(stats.get("day_start_equity") or start or 0)
+    total = float(stats.get("today_pnl") or 0)
+    pct = float(stats.get("today_pnl_pct") or 0)
+    if start > 0:
+        pct = round((total / start) * 100.0, 2)
+    return {
+        "today_pnl": total,
+        "today_realized_pnl": float(stats.get("realized_pnl") or 0),
+        "today_open_pnl": float(stats.get("open_pnl") or 0),
+        "today_pnl_pct": pct,
+        "today_realized_pct": float(stats.get("realized_pnl_pct") or 0),
+        "day_start_equity": start or None,
+        "book": mode,
+        "book_date": book_date,
+        **stats,
+    }
+
+
 @app.get("/api/status")
-async def get_status():
+async def get_status(date: str = ""):
+    book_date = _normalize_book_date(date)
+    dhan_cash = 0.0
     try:
         bot_state["equity"] = get_equity()
         bot_state["broker_authenticated"] = True
         bot_state["broker_error"] = ""
         bot_state["open_positions"] = get_open_positions()
-        if getattr(config, "PAPER_TRADE", False):
-            bot_state["open_positions"] += paper_open_positions()
-            bot_state["trade_history"] = paper_trade_history()
-            bot_state["cash_pnl_today"] = (
-                sum(realized_pnl_today())
-                + paper_realized_pnl_today()
-            )
-        else:
+        dhan_cash = sum(realized_pnl_today())
+        bot_state["cash_pnl_today"] = dhan_cash
+        if not getattr(config, "PAPER_TRADE", False):
             bot_state["pending_orders"] = live_pending_orders_today()
+        if not bot_state.get("day_start_equity") and bot_state.get("equity"):
+            bot_state["day_start_equity"] = bot_state["equity"]
     except Exception as error:
         bot_state["broker_authenticated"] = False
         bot_state["broker_error"] = str(error)
-        bot_state["is_running"] = False
         bot_state["open_positions"] = []
+        bot_state["cash_pnl_today"] = 0.0
+    _attach_selected_book(book_date, dhan_cash)
     doc = load_rules_document()
     bot_state["learned_rules"] = doc.get("rules") or []
     bot_state["last_audit_at"] = doc.get("last_audit_at")
     bot_state["confirmed_fills"] = len(bot_state.get("trade_history") or [])
     bot_state["paper_trade"] = bool(getattr(config, "PAPER_TRADE", False))
+    bot_state["desk_mode"] = "paper" if bot_state["paper_trade"] else "live"
+    bot_state["desk_mode_date"] = today_ist()
+    bot_state["book_date"] = book_date
     bot_state["trading_enabled"] = bool(config.TRADING_ENABLED)
     bot_state["catalyst_mode"] = bool(getattr(config, "USE_CATALYST_WATCHLIST", False))
     payload = dict(bot_state)
-    payload["watchlist"] = _public_watchlist()
+    payload["credentials"] = credentials_status()
+    payload["watchlist"] = _public_watchlist(book_date)
+    payload.update(_book_pnl_payload(book_date))
+    payload["book_dates"] = (
+        paper_available_dates() if payload["desk_mode"] == "paper" else live_available_dates()
+    )
     if getattr(config, "PAPER_TRADE", False):
         payload["paper_session"] = paper_session_state()
-        payload["paper_eod_report"] = paper_eod_report()
+        payload["paper_eod_report"] = paper_eod_report(book_date)
+    save_snapshot(bot_state, payload["watchlist"])
     return payload
+
+
+@app.get("/api/book")
+async def get_desk_book(mode: str = "", date: str = ""):
+    chosen = str(mode or _book_mode()).lower()
+    if chosen not in {"paper", "live"}:
+        chosen = _book_mode()
+    book_date = _normalize_book_date(date)
+    if chosen == "paper":
+        fills = paper_trade_history(book_date)
+        stats = paper_day_pnl_stats(book_date)
+        dates = paper_available_dates()
+    else:
+        fills = live_trade_history(book_date)
+        stats = live_day_pnl_stats(book_date)
+        dates = live_available_dates()
+    return {
+        "ok": True,
+        "mode": chosen,
+        "date": book_date,
+        "dates": dates,
+        "fills": fills,
+        "pnl": stats,
+    }
 
 
 @app.get("/api/paper/eod-report")
@@ -356,75 +701,150 @@ async def get_paper_eod_report(date: str = ""):
     return {"ok": True, "report": report}
 
 
-def _public_watchlist():
+def _watchlist_public_row(row, paper_fill=None):
+    plan = row.get("plan") or {}
+    if not plan and row.get("entry") is not None:
+        plan = {
+            "entry": row.get("entry"),
+            "sl": row.get("sl"),
+            "tp": row.get("tp"),
+            "setup_kind": row.get("setup"),
+            "alert_state": row.get("alert_state"),
+            "trigger": row.get("trigger"),
+        }
+    fill = paper_fill or {}
+    symbol = row.get("symbol") or row.get("name")
+    entry = plan.get("entry")
+    sl = plan.get("sl")
+    tp = plan.get("tp")
+    qty = row.get("qty")
+    if entry is None:
+        entry = fill.get("fill") or fill.get("price")
+    if sl is None:
+        sl = fill.get("sl")
+    if tp is None:
+        tp = fill.get("tp")
+    if not qty:
+        qty = fill.get("volume") or fill.get("qty")
+    reason = row.get("reason") or fill.get("result") or row.get("catalyst")
+    setup = plan.get("setup_kind")
+    if fill:
+        setup = fill.get("status") or setup or "PAPER"
+    return {
+        "rank": row.get("rank"),
+        "name": row.get("name") or symbol,
+        "symbol": symbol,
+        "input_symbol": row.get("input_symbol"),
+        "exchange": row.get("exchange"),
+        "instrument": row.get("instrument"),
+        "security_id": row.get("security_id"),
+        "strategy": row.get("strategy") or "breakout",
+        "catalyst": row.get("catalyst"),
+        "chase_risk": row.get("chase_risk"),
+        "ok": row.get("ok"),
+        "reason": reason,
+        "entry": entry,
+        "sl": sl,
+        "tp": tp,
+        "exit": fill.get("exit_price"),
+        "exit_reason": fill.get("exit_reason"),
+        "pnl": fill.get("pnl"),
+        "qty": qty,
+        "setup": setup,
+        "paper_fill": bool(fill),
+        "paper_only": bool(row.get("paper_only")),
+        "risk_rs": row.get("risk_rs"),
+        "trigger": plan.get("trigger"),
+        "prior_low": plan.get("prior_low"),
+        "prior_high": plan.get("prior_high"),
+        "prior_time": plan.get("prior_time"),
+        "broke": plan.get("broke"),
+        "alert_state": plan.get("alert_state"),
+        "breakout_time": plan.get("breakout_time"),
+        "volume_ratio_5m": plan.get("volume_ratio_5m"),
+        "volume_spike": plan.get("volume_spike"),
+        "volume_status": plan.get("volume_status"),
+        "oi": plan.get("oi"),
+        "oi_change_pct": plan.get("oi_change_pct"),
+        "oi_spike": plan.get("oi_spike"),
+        "oi_status": plan.get("oi_status"),
+        "breakout_markers": [
+            marker
+            for marker in bot_state.get("breakout_alerts", [])
+            if marker.get("symbol") == symbol
+        ],
+    }
+
+
+def _public_watchlist(book_date=None):
+    book_date = _normalize_book_date(book_date or bot_state.get("book_date"))
+    if getattr(config, "PAPER_TRADE", False):
+        fills = paper_levels_by_symbol(session_date=book_date)
+        extra_strategy = "paper"
+    else:
+        fills = live_levels_by_symbol(book_date)
+        extra_strategy = "live"
     rows = bot_state.get("watchlist") or []
-    if rows and isinstance(rows[0], dict) and "ok" in rows[0]:
-        out = []
-        for row in rows:
-            plan = row.get("plan") or {}
-            out.append(
+    source = rows
+    if not (rows and isinstance(rows[0], dict) and "ok" in rows[0]):
+        source = load_watchlist().get("names") or []
+    out = []
+    seen = set()
+    for row in source:
+        symbol = str(row.get("symbol") or row.get("name") or "").strip().upper()
+        public = _watchlist_public_row(row, fills.get(symbol))
+        out.append(public)
+        if symbol:
+            seen.add(symbol)
+    extra_rank = len(out)
+    for symbol, fill in fills.items():
+        if symbol in seen:
+            continue
+        extra_rank += 1
+        out.append(
+            _watchlist_public_row(
                 {
-                    "rank": row.get("rank"),
-                    "name": row.get("name"),
-                    "symbol": row.get("symbol"),
-                    "input_symbol": row.get("input_symbol"),
-                    "exchange": row.get("exchange"),
-                    "instrument": row.get("instrument"),
-                    "strategy": row.get("strategy") or "breakout",
-                    "catalyst": row.get("catalyst"),
-                    "chase_risk": row.get("chase_risk"),
-                    "ok": row.get("ok"),
-                    "reason": row.get("reason"),
-                    "entry": plan.get("entry"),
-                    "sl": plan.get("sl"),
-                    "tp": plan.get("tp"),
-                    "qty": row.get("qty"),
-                    "setup": plan.get("setup_kind"),
-                    "risk_rs": row.get("risk_rs"),
-                    "trigger": plan.get("trigger"),
-                    "prior_low": plan.get("prior_low"),
-                    "prior_high": plan.get("prior_high"),
-                    "prior_time": plan.get("prior_time"),
-                    "broke": plan.get("broke"),
-                    "alert_state": plan.get("alert_state"),
-                    "breakout_time": plan.get("breakout_time"),
-                    "volume_ratio_5m": plan.get("volume_ratio_5m"),
-                    "volume_spike": plan.get("volume_spike"),
-                    "volume_status": plan.get("volume_status"),
-                    "oi": plan.get("oi"),
-                    "oi_change_pct": plan.get("oi_change_pct"),
-                    "oi_spike": plan.get("oi_spike"),
-                    "oi_status": plan.get("oi_status"),
-                    "breakout_markers": [
-                        marker
-                        for marker in bot_state.get("breakout_alerts", [])
-                        if marker.get("symbol") == row.get("symbol")
-                    ],
-                }
+                    "rank": extra_rank,
+                    "name": symbol,
+                    "symbol": symbol,
+                    "strategy": extra_strategy,
+                    "ok": True,
+                    "reason": fill.get("result"),
+                    "qty": fill.get("volume"),
+                    "paper_only": extra_strategy == "paper",
+                },
+                fill,
             )
-        return out
-    return load_watchlist().get("names") or []
+        )
+    return out
 
 
 @app.post("/api/watchlist")
 async def api_watchlist(request: WatchlistRequest):
     names = []
+    skipped = []
     seen = set()
     for item in request.names:
         row = item.model_dump()
         row["name"] = str(row.get("name") or row.get("symbol") or "").strip()
         row["symbol"] = str(row.get("symbol") or "").strip().upper() or None
+        if row.get("security_id"):
+            row["security_id"] = str(row.get("security_id")).strip()
+        if row.get("expiry"):
+            row["expiry"] = str(row.get("expiry")).strip()
         contract = normalize_option_contract(row["symbol"] or row["name"])
         requested_instrument = str(row.get("instrument") or "").strip().upper()
         if requested_instrument in {"OPTIDX", "OPTFUT"} and not contract:
-            return {
-                "ok": False,
-                "error": (
-                    "Option format must include expiry and strike, for example "
-                    "'NIFTY 15 SEP 25000 CE' or "
-                    "'CRUDEOILM 17 SEP 9900 CALL'."
-                ),
-            }
+            skipped.append(
+                {
+                    "name": row["name"],
+                    "error": (
+                        "Option format must include expiry and strike, for example "
+                        "'NIFTY 15 SEP 25000 CE'."
+                    ),
+                }
+            )
+            continue
         if contract:
             inferred_exchange, inferred_instrument = infer_option_market(contract)
             row["name"] = contract
@@ -433,19 +853,27 @@ async def api_watchlist(request: WatchlistRequest):
             row["instrument"] = str(
                 row.get("instrument") or inferred_instrument
             ).upper()
+            request_body = {
+                "symbol": contract,
+                "exchange": row["exchange"],
+                "instrument": row["instrument"],
+            }
+            if row.get("security_id"):
+                request_body["security_id"] = row["security_id"]
+            if row.get("expiry"):
+                request_body["expiry"] = row["expiry"]
             try:
-                resolved = resolve_symbol_cached(
-                    {
-                        "symbol": contract,
-                        "exchange": row["exchange"],
-                        "instrument": row["instrument"],
-                    }
-                )
+                resolved = resolve_symbol_cached(request_body)
             except Exception as error:
-                return {"ok": False, "error": f"Contract not found on Dhan: {error}"}
+                skipped.append(
+                    {"name": contract, "error": f"Contract not found on Dhan: {error}"}
+                )
+                continue
             row["name"] = resolved.get("display_symbol") or contract
+            row["symbol"] = resolved.get("symbol") or contract
             row["exchange"] = resolved.get("exchange") or row["exchange"]
             row["instrument"] = resolved.get("instrument") or row["instrument"]
+            row["security_id"] = resolved.get("security_id") or row.get("security_id")
         else:
             row["exchange"] = str(row.get("exchange") or "NSE").upper()
             row["instrument"] = str(row.get("instrument") or "EQUITY").upper()
@@ -456,7 +884,10 @@ async def api_watchlist(request: WatchlistRequest):
             "consolidation",
             "trend_break",
         }:
-            return {"ok": False, "error": f"Unsupported strategy: {row['strategy']}"}
+            skipped.append(
+                {"name": row["name"], "error": f"Unsupported strategy: {row['strategy']}"}
+            )
+            continue
         key = (
             row["exchange"],
             row["instrument"],
@@ -473,8 +904,37 @@ async def api_watchlist(request: WatchlistRequest):
         "names": names,
     }
     save_watchlist(doc)
-    bot_state["watchlist"] = doc["names"]
+    prior = {
+        str(row.get("symbol") or row.get("name") or "").upper(): row
+        for row in (bot_state.get("watchlist") or [])
+    }
+    for row in names:
+        prev = prior.get(str(row.get("symbol") or row.get("name") or "").upper())
+        if not prev:
+            continue
+        if prev.get("plan") or prev.get("entry") is not None:
+            row["plan"] = prev.get("plan") or {
+                "entry": prev.get("entry"),
+                "sl": prev.get("sl"),
+                "tp": prev.get("tp"),
+                "setup_kind": prev.get("setup"),
+                "alert_state": prev.get("alert_state"),
+            }
+            row["ok"] = prev.get("ok")
+            row["reason"] = prev.get("reason") or row.get("reason")
+            row["qty"] = prev.get("qty")
+            row["risk_rs"] = prev.get("risk_rs")
+    bot_state["watchlist"] = names
+    save_snapshot(bot_state, min_interval=0)
     await asyncio.to_thread(invalidate_chart_cache)
+    try:
+        analyzed = await asyncio.to_thread(analyze_watchlist, datetime.now(IST).date())
+        bot_state["watchlist"] = analyzed
+        _record_breakout_alerts(analyzed)
+        _publish_watchlist_plan(analyzed)
+        save_snapshot(bot_state, min_interval=0)
+    except Exception as error:
+        print(f"[WATCHLIST] Immediate analyze failed: {error}")
     if datetime.now(IST).time() < SCAN_CUTOFF:
         bot_state["orders_placed"] = len(bot_state.get("filled_sources") or []) >= int(
             getattr(config, "LIVE_MAX_ENTRIES_PER_DAY", 10)
@@ -484,7 +944,12 @@ async def api_watchlist(request: WatchlistRequest):
             f"{len(bot_state.get('filled_sources') or [])}/"
             f"{int(getattr(config, 'LIVE_MAX_ENTRIES_PER_DAY', 10))} live slots filled."
         )
-    return {"ok": True, "count": len(doc["names"]), "document": doc}
+    return {
+        "ok": True,
+        "count": len(doc["names"]),
+        "document": doc,
+        "skipped": skipped,
+    }
 
 
 @app.get("/api/watchlist")
@@ -561,6 +1026,11 @@ async def get_delta_status():
     delta_state["universe"] = load_delta_universe()["instruments"]
     delta_state["rules"] = [
         {"rule": "Daily confirmation", "value": "Required before entry", "status": "active"},
+        {
+            "rule": "Auto structure",
+            "value": "Breakout+cheap IV=straddle; expand=strangle; range+rich IV=condor; tight pin=butterfly",
+            "status": "active",
+        },
         {"rule": "Execution universe", "value": "BTC options only", "status": "active"},
         {
             "rule": "Daily loss stop",
@@ -941,6 +1411,7 @@ def _publish_watchlist_plan(rows):
         bot_state["last_logic"] = (
             f"{symbol}: {row.get('reason') or 'monitoring breakout'}."
         )
+    save_snapshot(bot_state, min_interval=0)
 
 
 async def breakout_alert_loop():
@@ -950,7 +1421,7 @@ async def breakout_alert_loop():
         active_hours = time(9, 0) <= now.time() <= time(23, 30)
         if (
             getattr(config, "BREAKOUT_ALERTS_ENABLED", True)
-            and bot_state.get("broker_authenticated")
+            and (bot_state.get("broker_authenticated") or dhan_ready())
             and (
                 not bot_state.get("is_running")
                 or bot_state.get("orders_placed")
@@ -1002,6 +1473,12 @@ async def trading_loop():
     while True:
         if not bot_state["is_running"]:
             await asyncio.sleep(1)
+            continue
+        if not dhan_ready():
+            bot_state["is_running"] = False
+            bot_state["broker_authenticated"] = False
+            bot_state["broker_error"] = "Dhan access token missing or expired."
+            print("[SYSTEM] Engine halted: Dhan keys missing or expired.")
             continue
 
         now = datetime.now(IST)
