@@ -175,6 +175,29 @@ def instrument_requests(item):
     return aliases_for(name, symbol)
 
 
+def watchlist_stamp():
+    try:
+        return WATCHLIST_PATH.stat().st_mtime
+    except OSError:
+        return 0.0
+
+
+def watchlist_row_key(row):
+    sid = str((row or {}).get("security_id") or "").strip()
+    if sid:
+        try:
+            return f"sid:{int(float(sid))}"
+        except (TypeError, ValueError):
+            return f"sid:{sid}"
+    return "|".join(
+        [
+            str((row or {}).get("exchange") or "").upper(),
+            str((row or {}).get("instrument") or "").upper(),
+            str((row or {}).get("symbol") or (row or {}).get("name") or "").upper(),
+        ]
+    )
+
+
 def load_watchlist():
     if not WATCHLIST_PATH.exists():
         return {"date": "", "names": []}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings · Keys</title>
+  <style>
+    :root {
+      --bg: #090d14;
+      --panel: #101826;
+      --line: #1c2738;
+      --text: #ffffff;
+      --green: #3dd68c;
+      --red: #ff5c7a;
+      --amber: #f5c542;
+      --blue: #4ea1ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #090d14;
+      color: #fff;
+      font-family: Inter, "IBM Plex Sans", sans-serif;
+    }
+    .app-frame { margin-left: 184px; min-height: 100vh; }
+    .sidebar {
+      position: fixed; inset: 0 auto 0 0; width: 184px; z-index: 20;
+      padding: 18px 12px; border-right: 1px solid var(--line);
+      background: rgba(6, 15, 28, 0.94);
+      display: flex; flex-direction: column;
+    }
+    .side-logo { font-weight: 800; color: #7db8ff; margin: 0 8px 20px; }
+    .side-logo span { color: var(--green); }
+    .side-nav { display: grid; gap: 5px; }
+    .side-nav a {
+      color: #c9d6e8; text-decoration: none; padding: 9px 11px;
+      border-radius: 7px; font-size: 12px;
+    }
+    .side-nav a:hover, .side-nav a.active {
+      color: #fff; background: rgba(78, 161, 255, 0.14);
+    }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 14px 20px; border-bottom: 1px solid var(--line); background: #0c121c;
+    }
+    .brand { font-weight: 700; letter-spacing: 0.08em; font-size: 13px; }
+    .brand span { color: var(--green); }
+    main { padding: 20px; max-width: 760px; }
+    .card {
+      background: var(--panel); border: 1px solid var(--line);
+      border-radius: 10px; padding: 16px; margin-bottom: 14px;
+    }
+    label { display: block; font-size: 12px; color: #9fb1c8; margin: 10px 0 6px; }
+    input {
+      width: 100%; background: #0c121c; color: #fff; border: 1px solid var(--line);
+      border-radius: 6px; padding: 9px 10px; font: inherit;
+    }
+    button {
+      background: var(--panel); color: #fff; border: 1px solid var(--line);
+      border-radius: 6px; padding: 8px 12px; font: inherit; cursor: pointer;
+    }
+    button.primary { background: #16325c; border-color: #2a4d80; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+    .key-banner { padding: 10px 20px; font-size: 13px; }
+    .key-expired, .key-error, .key-missing { background: rgba(255, 92, 122, 0.16); color: #ffb3c0; }
+    .key-soon { background: rgba(245, 197, 66, 0.14); color: #f5c542; }
+    .key-unknown, .key-ok { background: rgba(78, 161, 255, 0.12); color: #9dc4ff; }
+    .hint { color: #9fb1c8; font-size: 13px; line-height: 1.5; }
+    #saveStatus { font-size: 13px; margin-top: 10px; }
+    @media (max-width: 700px) {
+      .sidebar { display: none; }
+      .app-frame { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="side-logo">MARKET <span>COMMAND</span></div>
+    <nav class="side-nav">
+      <a href="/command">Command</a>
+      <a href="/plan">Plan</a>
+      <a href="/">Execute</a>
+      <a href="/charts">Charts</a>
+      <a href="/gamma">Gamma</a>
+      <a class="active" href="/settings">Settings</a>
+    </nav>
+  </aside>
+  <div class="app-frame">
+    <header>
+      <div class="brand">API <span>KEYS</span></div>
+      <a href="/" style="color:#9dc4ff;font-size:13px">Back to desk</a>
+    </header>
+    <div id="keyExpiryBanner" class="key-banner" hidden></div>
+    <main>
+      <p class="hint">
+        Keys stay in this browser until the Dhan JWT expires. They are sent to
+        the local engine in memory only — not written to disk or git.
+        Generate a Dhan token from My Profile → DhanHQ Trading APIs.
+      </p>
+      <div class="card">
+        <div>Dhan live desk</div>
+        <label for="dhan_client_id">Client ID</label>
+        <input id="dhan_client_id" autocomplete="off" spellcheck="false" />
+        <label for="dhan_access_token">Access token</label>
+        <input id="dhan_access_token" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="card">
+        <div>Optional LLM</div>
+        <label for="deepseek_api_key">DeepSeek API key</label>
+        <input id="deepseek_api_key" autocomplete="off" spellcheck="false" />
+        <label for="groq_api_key">Groq API key</label>
+        <input id="groq_api_key" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="card">
+        <div>Optional Delta desk</div>
+        <label for="delta_api_key">Delta API key</label>
+        <input id="delta_api_key" autocomplete="off" spellcheck="false" />
+        <label for="delta_api_secret">Delta API secret</label>
+        <input id="delta_api_secret" autocomplete="off" spellcheck="false" />
+      </div>
+      <div class="row">
+        <button class="primary" id="saveBtn" type="button">Save in this browser</button>
+        <button id="clearBtn" type="button">Clear keys</button>
+      </div>
+      <div id="saveStatus"></div>
+    </main>
+  </div>
+  <script src="/static/keys.js"></script>
+  <script>
+    const fields = [
+      "dhan_client_id", "dhan_access_token", "deepseek_api_key",
+      "groq_api_key", "delta_api_key", "delta_api_secret",
+    ];
+    function fillForm() {
+      const keys = HedgeKeys.loadKeys();
+      fields.forEach((id) => { document.getElementById(id).value = keys[id] || ""; });
+      HedgeKeys.renderBanner(document.getElementById("keyExpiryBanner"));
+    }
+    function readForm() {
+      const keys = {};
+      fields.forEach((id) => { keys[id] = document.getElementById(id).value.trim(); });
+      return keys;
+    }
+    document.getElementById("saveBtn").onclick = async function () {
+      const status = document.getElementById("saveStatus");
+      const keys = readForm();
+      HedgeKeys.saveKeys(keys);
+      status.textContent = "Saving…";
+      try {
+        const state = await HedgeKeys.syncToServer();
+        HedgeKeys.renderBanner(document.getElementById("keyExpiryBanner"));
+        status.textContent = state.message || "Saved.";
+        status.style.color = state.kind === "expired" || state.kind === "error" ? "#ff5c7a" : "#3dd68c";
+      } catch (error) {
+        status.textContent = error.message || String(error);
+        status.style.color = "#ff5c7a";
+      }
+    };
+    document.getElementById("clearBtn").onclick = async function () {
+      if (!confirm("Clear keys from this browser and server memory?")) return;
+      await HedgeKeys.clearServer();
+      fillForm();
+      document.getElementById("saveStatus").textContent = "Keys cleared.";
+    };
+    fillForm();
+    HedgeKeys.syncToServer().then(() => {
+      HedgeKeys.renderBanner(document.getElementById("keyExpiryBanner"));
+    }).catch(() => {});
+  </script>
+</body>
+</html>

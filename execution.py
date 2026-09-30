@@ -22,6 +22,19 @@ from zoneinfo import ZoneInfo
 
 def evaluate_entry_plan(symbol, signal="BUY", chase_risk="medium", strategy="breakout"):
     instrument = resolve_symbol_cached(symbol)
+    from catalyst_setup import is_option_hedge
+    from watchlist import load_watchlist
+
+    sid = str(instrument.get("security_id") or "")
+    for item in load_watchlist().get("names") or []:
+        same_sid = sid and str(item.get("security_id") or "") == sid
+        same_name = str(item.get("symbol") or item.get("name") or "").upper() in {
+            str(instrument.get("symbol") or "").upper(),
+            str(instrument.get("display_symbol") or "").upper(),
+            str(instrument.get("trading_symbol") or "").upper(),
+        }
+        if (same_sid or same_name) and is_option_hedge(item):
+            return None, "WAIT: hedge only — no breakout entry", instrument, None
     five = fetch_five_minute_candles(instrument, bars=80)
     if five is None or five.empty:
         from broker import fetch_live_session_candles
@@ -127,6 +140,33 @@ def calculate_position_size(symbol, stop_loss_price, risk_percent, equity):
     return qty, reason
 
 
+def _dhan_net_qty(item):
+    for key in ("netQty", "net_qty", "quantity", "qty"):
+        try:
+            value = float(item.get(key) or 0)
+        except (TypeError, ValueError):
+            value = 0.0
+        if value:
+            return value
+    try:
+        buy = float(item.get("buyQty") or item.get("buy_qty") or 0)
+        sell = float(item.get("sellQty") or item.get("sell_qty") or 0)
+        return buy - sell
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _dhan_book(item, name=""):
+    inst = str(item.get("instrument") or item.get("instrumentType") or "").upper()
+    exch = str(item.get("exchange") or item.get("exchangeSegment") or "").upper()
+    text = f"{inst} {exch} {name}".upper()
+    if "MCX" in text or inst in {"OPTFUT", "FUTCOM"}:
+        return "mcx"
+    if inst in {"OPTIDX", "OPTSTK", "FUTIDX"} or "OPT" in text:
+        return "index"
+    return "cash"
+
+
 def get_open_positions(symbol=None):
     rows = []
     try:
@@ -138,7 +178,7 @@ def get_open_positions(symbol=None):
     for item in raw:
         if not isinstance(item, dict):
             continue
-        net = float(item.get("netQty") or item.get("net_qty") or 0)
+        net = _dhan_net_qty(item)
         if net == 0:
             continue
         name = str(
@@ -150,6 +190,7 @@ def get_open_positions(symbol=None):
         if needle and needle not in name.upper() and name.upper() not in needle:
             continue
         side = str(item.get("positionType") or "LONG").upper()
+        inst = str(item.get("instrument") or item.get("instrumentType") or "")
         rows.append(
             {
                 "ticket": item.get("securityId") or item.get("security_id"),
@@ -160,6 +201,10 @@ def get_open_positions(symbol=None):
                 "sl": item.get("stopLossPrice") or "",
                 "tp": item.get("targetPrice") or "",
                 "pnl": item.get("unrealizedProfit") or item.get("unrealized_profit") or 0,
+                "instrument": inst,
+                "exchange": item.get("exchange") or item.get("exchangeSegment") or "",
+                "security_id": str(item.get("securityId") or item.get("security_id") or ""),
+                "book": _dhan_book(item, name),
                 "raw": item,
             }
         )
@@ -353,6 +398,9 @@ def execute_trade(
             kind=book,
             source=source,
             value_multiplier=instrument.get("value_multiplier", 1),
+            security_id=instrument.get("security_id"),
+            exchange=instrument.get("exchange"),
+            instrument=instrument.get("instrument"),
         )
         message = (
             f"PAPER: {signal} {instrument['trading_symbol']} qty {order_quantity} "

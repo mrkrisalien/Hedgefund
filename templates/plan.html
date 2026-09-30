@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plan · Market Command</title>
+  <link rel="stylesheet" href="/app-static/shell.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="side-logo">MARKET <span>COMMAND</span></div>
+    <div class="side-group">One desk</div>
+    <nav class="side-nav">
+      <a href="/command">Command</a>
+      <a class="active" href="/plan">Plan</a>
+      <a href="/">Execute</a>
+      <a href="/charts">Charts</a>
+      <a href="/gamma">Gamma</a>
+      <a href="/settings">Settings</a>
+    </nav>
+    <div class="side-note">files TMP V3.2 scores the index. It does not send orders.</div>
+  </aside>
+  <div class="app-frame">
+    <div id="keyExpiryBanner" class="key-banner" hidden></div>
+    <header class="shell-top">
+      <div>
+        <div class="brand">TRADE <span>PLAN</span></div>
+        <div class="sub">TMP score · 5-point ORB · ₹500 · 5 slots</div>
+      </div>
+      <div class="controls">
+        <nav class="desk-switch">
+          <a href="/command">Command</a>
+          <a class="active" href="/plan">Plan</a>
+          <a href="/">Execute</a>
+          <a href="/charts">Charts</a>
+          <a href="/gamma">Gamma</a>
+        </nav>
+        <div>
+          <div class="mode-caption">Today</div>
+          <div class="mode-toggle">
+            <button type="button" id="modePaper" class="paper" onclick="setDeskMode('paper')">Paper</button>
+            <button type="button" id="modeLive" class="live" onclick="setDeskMode('live')">Live</button>
+          </div>
+        </div>
+        <span id="engineControlStatus" class="sub"></span>
+      </div>
+      <div class="live-clock" id="liveClock">IST --:--:--</div>
+    </header>
+    <main class="shell-main">
+      <div class="grid-4">
+        <div class="card"><div class="label">Stop / slot</div><div class="stat">₹500</div></div>
+        <div class="card"><div class="label">Slots</div><div class="stat">5</div></div>
+        <div class="card"><div class="label">Kill</div><div class="stat">−₹3,000</div></div>
+        <div class="card"><div class="label">Square-off</div><div class="stat">+₹5,000</div></div>
+      </div>
+      <div class="card">
+        <div class="label">IST sequence</div>
+        <table>
+          <thead><tr><th>Time</th><th>Page</th><th>Do</th><th>Gate</th></tr></thead>
+          <tbody>
+            <tr><td>08:45</td><td>Command</td><td>Nifty, Bank, VIX, DXY, Gold, BTC</td><td>Stand down on VIX shock</td></tr>
+            <tr><td>09:00</td><td>Command</td><td>Dow, Nasdaq, India VIX, NSE A/D, GIFT/SGX</td><td>Bias only. No order.</td></tr>
+            <tr><td>09:10</td><td>Plan</td><td>Cash vs options from the briefing</td><td>VIX ≥ 15 → half cash; mixed → skip</td></tr>
+            <tr><td>09:15</td><td>Execute</td><td>First 5m high / low / direction</td><td>Doji → skip</td></tr>
+            <tr><td>09:25</td><td>Execute</td><td>Start engine. Break, retrace, 3m close</td><td>1 name / sector · no repeat</td></tr>
+            <tr><td>15:15</td><td>Execute</td><td>Flatten cash book</td><td>Do not hold</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="label">Cash vs options from the 09:00 tape</div>
+        <p class="sub" id="planPreopenTitle" style="margin:8px 0">Loading briefing…</p>
+        <p id="planPreopenBody" style="color:var(--muted);line-height:1.55;font-size:13px"></p>
+        <ul style="color:var(--muted);line-height:1.55;font-size:13px">
+          <li><strong>Cash is the default</strong> on this desk. Green US + green GIFT + VIX under 15 → wait for the 5-point ORB, then one cash name per bullish sector at ₹500 risk.</li>
+          <li><strong>Do not buy options at 09:15.</strong> A gap already sits in the premium. Calls/puts wait for the same 09:25 3m close, and only if VIX is elevated or cash is blocked.</li>
+          <li><strong>Red overnight tape</strong> → no cash longs and no call buying. Skip or wait for a short confirm; this book does not chase the open.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="label">Research</div>
+        <p>TMP V3.2 lives in the files repo. If Streamlit is up: <a class="quiet" href="http://127.0.0.1:8501">127.0.0.1:8501</a>. Use the score here; place the trade only on Execute.</p>
+      </div>
+    </main>
+  </div>
+  <script src="/static/keys.js"></script>
+  <script src="/app-static/shell.js"></script>
+  <script>
+    async function loadPlanBrief() {
+      try {
+        const res = await fetch("/api/preopen");
+        const data = await res.json();
+        const rec = data.recommendation || {};
+        const daily = data.daily || {};
+        document.getElementById("planPreopenTitle").textContent =
+          daily.title || rec.title || "Briefing unavailable";
+        document.getElementById("planPreopenBody").textContent =
+          [daily.body, rec.body].filter(Boolean).join(" ");
+      } catch (error) {
+        document.getElementById("planPreopenTitle").textContent = "Briefing unavailable";
+      }
+    }
+    loadPlanBrief();
+    setInterval(loadPlanBrief, 60000);
+  </script>
+</body>
+</html>

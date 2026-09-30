@@ -86,6 +86,7 @@ def record_fill(
     kind="NSE_EQ",
     source="",
     value_multiplier=1.0,
+    **kwargs,
 ):
     now = datetime.now(IST)
     with _LOCK:
@@ -111,10 +112,49 @@ def record_fill(
             "exit_ts": None,
             "exit_reason": None,
             "pnl": 0.0,
+            "ltp": float(price) if price is not None else None,
+            "security_id": str(kwargs.get("security_id") or ""),
+            "exchange": kwargs.get("exchange") or "",
+            "instrument": kwargs.get("instrument") or "",
         }
         fills.append(row)
         _save(doc)
         return row
+
+
+def close_fill(ticket, exit_price=None, reason="MANUAL"):
+    fill_id = str(ticket or "").replace("PAPER-", "")
+    now = datetime.now(IST)
+    with _LOCK:
+        doc = _load()
+        for row in doc.get("fills", []):
+            if str(row.get("id")) != fill_id:
+                continue
+            if row.get("status") == "CLOSED":
+                return {"ok": True, "paper": True, "fill": row}
+            entry = float(row.get("price") or 0)
+            qty = float(row.get("qty") or 0)
+            multiplier = float(row.get("value_multiplier") or 1)
+            side = str(row.get("signal") or "BUY").upper()
+            mark = float(exit_price if exit_price is not None else (row.get("ltp") or entry))
+            pnl = (
+                (mark - entry) * qty * multiplier
+                if side == "BUY"
+                else (entry - mark) * qty * multiplier
+            )
+            row.update(
+                {
+                    "status": "CLOSED",
+                    "exit_price": mark,
+                    "exit_ts": now.isoformat(),
+                    "exit_reason": reason,
+                    "pnl": round(pnl, 2),
+                    "ltp": mark,
+                }
+            )
+            _save(doc)
+            return {"ok": True, "paper": True, "fill": row}
+    raise RuntimeError(f"No paper position matching {ticket}")
 
 
 def fills_for_day(session_date=None):
@@ -169,52 +209,197 @@ def save_session(session_date=None, **updates):
     return session_state(key)
 
 
-def trade_history(session_date=None):
-    rows = []
-    for row in fills_for_day(session_date):
-        status = str(row.get("status") or "OPEN").upper()
-        result = "Paper position open"
-        if status == "CLOSED":
-            result = (
-                f"Paper exit {row.get('exit_reason') or ''} @ {row.get('exit_price')} "
-                f"| P&L Rs {float(row.get('pnl') or 0):.2f}"
-            )
-        rows.append(
-            {
-                "id": row.get("id"),
-                "time": row.get("ts"),
-                "asset": row.get("symbol"),
-                "symbol": row.get("symbol"),
-                "sector": row.get("sector") or "",
-                "source": row.get("source") or "",
-                "signal": row.get("signal"),
-                "side": row.get("signal"),
-                "result": result,
-                "fill": row.get("price"),
-                "sl": row.get("sl"),
-                "tp": row.get("tp"),
-                "volume": row.get("qty"),
-                "deal": "PAPER",
-                "status": status,
-                "exit_price": row.get("exit_price"),
-                "exit_reason": row.get("exit_reason"),
-                "pnl": float(row.get("pnl") or 0),
-            }
+def _notional(row):
+    price = float(row.get("price") or row.get("fill") or 0)
+    qty = float(row.get("qty") or row.get("volume") or 0)
+    multiplier = float(row.get("value_multiplier") or 1)
+    return abs(price * qty * multiplier)
+
+
+def _mark_pnl(row, ltp=None):
+    entry = float(row.get("price") or 0)
+    qty = float(row.get("qty") or 0)
+    multiplier = float(row.get("value_multiplier") or 1)
+    side = str(row.get("signal") or "BUY").upper()
+    mark = float(ltp if ltp is not None else (row.get("ltp") if row.get("ltp") not in (None, "") else entry) or 0)
+    if side == "BUY":
+        pnl = (mark - entry) * qty * multiplier
+    else:
+        pnl = (entry - mark) * qty * multiplier
+    return round(pnl, 2), mark
+
+
+def _pnl_pct(pnl, notional):
+    if not notional:
+        return None
+    return round(float(pnl or 0) / notional * 100.0, 2)
+
+
+def available_dates():
+    days = {
+        str(row.get("session") or "")
+        for row in (_load().get("fills") or [])
+        if row.get("session")
+    }
+    days.update((_load().get("sessions") or {}).keys())
+    return sorted(day for day in days if day)
+
+
+def day_pnl_stats(session_date=None, start_equity=0.0):
+    fills = fills_for_day(session_date)
+    closed = [row for row in fills if str(row.get("status") or "").upper() == "CLOSED"]
+    open_rows = [row for row in fills if str(row.get("status") or "").upper() != "CLOSED"]
+    realized = round(sum(float(row.get("pnl") or 0) for row in closed), 2)
+    open_pnl = 0.0
+    for row in open_rows:
+        ltp = float(row.get("ltp") or row.get("price") or 0)
+        entry = float(row.get("price") or 0)
+        qty = float(row.get("qty") or 0)
+        multiplier = float(row.get("value_multiplier") or 1)
+        side = str(row.get("signal") or "BUY").upper()
+        if side == "BUY":
+            open_pnl += (ltp - entry) * qty * multiplier
+        else:
+            open_pnl += (entry - ltp) * qty * multiplier
+    open_pnl = round(open_pnl, 2)
+    start = float(start_equity or 0)
+    if start <= 0:
+        start = round(sum(_notional(row) for row in fills), 2)
+    pct = round(((realized + open_pnl) / start) * 100.0, 2) if start else 0.0
+    realized_pct = round((realized / start) * 100.0, 2) if start else 0.0
+    return {
+        "realized_pnl": realized,
+        "open_pnl": open_pnl,
+        "today_pnl": round(realized + open_pnl, 2),
+        "day_start_equity": start or None,
+        "today_pnl_pct": pct,
+        "realized_pnl_pct": realized_pct,
+        "trade_count": len(fills),
+        "closed_count": len(closed),
+        "session": _date_key(session_date),
+        "book": "paper",
+    }
+
+
+def today_pnl_stats(start_equity=0.0):
+    return day_pnl_stats(None, start_equity)
+
+
+def _history_row(row):
+    status = str(row.get("status") or "OPEN").upper()
+    if status == "OPEN":
+        pnl, _ = _mark_pnl(row)
+    else:
+        pnl = float(row.get("pnl") or 0)
+    notional = _notional(row)
+    result = "Paper position open"
+    if status == "CLOSED":
+        result = (
+            f"Paper exit {row.get('exit_reason') or ''} @ {row.get('exit_price')} "
+            f"| P&L Rs {pnl:.2f}"
         )
-    return rows
+    return {
+        "id": row.get("id"),
+        "time": row.get("ts"),
+        "asset": row.get("symbol"),
+        "symbol": row.get("symbol"),
+        "sector": row.get("sector") or "",
+        "source": row.get("source") or "",
+        "signal": row.get("signal"),
+        "side": row.get("signal"),
+        "result": result,
+        "fill": row.get("price"),
+        "price": row.get("price"),
+        "sl": row.get("sl"),
+        "tp": row.get("tp"),
+        "volume": row.get("qty"),
+        "deal": "PAPER",
+        "status": status,
+        "exit_price": row.get("exit_price"),
+        "exit_reason": row.get("exit_reason"),
+        "pnl": pnl,
+        "pnl_pct": _pnl_pct(pnl, notional),
+        "paper": True,
+        "ticket": f"PAPER-{row.get('id') or row.get('symbol')}",
+        "instrument": row.get("instrument") or "",
+        "exchange": row.get("exchange") or "",
+        "security_id": str(row.get("security_id") or ""),
+        "book": _position_book(row),
+    }
+
+
+def trade_history(session_date=None):
+    return [_history_row(row) for row in fills_for_day(session_date)]
+
+
+def trade_history_recent(limit=40):
+    fills = list(_load().get("fills") or [])
+    return [_history_row(row) for row in fills[-max(1, int(limit or 40)) :]]
+
+
+def latest_levels_by_symbol(limit=40, session_date=None):
+    levels = {}
+    rows = (
+        trade_history(session_date)
+        if session_date
+        else trade_history_recent(limit)
+    )
+    for row in rows:
+        symbol = str(row.get("symbol") or "").strip().upper()
+        if symbol:
+            levels[symbol] = row
+    return levels
+
+
+_LAST_LTP_REFRESH = 0.0
 
 
 def refresh_positions():
     """Mark paper SL/TP exits from live Dhan quotes; never submits an order."""
-    from broker import get_quote, resolve_symbol_cached
+    import time as clock
+    from broker import get_ltp_batch, resolve_symbol_cached
+
+    global _LAST_LTP_REFRESH
+    now_mono = clock.monotonic()
+    if now_mono - _LAST_LTP_REFRESH < 8:
+        return 0
+    _LAST_LTP_REFRESH = now_mono
 
     with _LOCK:
         doc = _load()
         changed = 0
         now = datetime.now(IST)
-        for row in doc.get("fills", []):
-            if row.get("status") != "OPEN":
+        open_rows = [
+            row
+            for row in doc.get("fills", [])
+            if row.get("status") == "OPEN"
+        ]
+        resolved_map = {}
+        instruments = []
+        for row in open_rows:
+            if str(row.get("session") or "") < str(now.date()):
                 continue
+            request = {"symbol": row.get("symbol")}
+            if row.get("security_id"):
+                request["security_id"] = row["security_id"]
+            if row.get("exchange"):
+                request["exchange"] = row["exchange"]
+            if row.get("instrument"):
+                request["instrument"] = row["instrument"]
+            try:
+                resolved = resolve_symbol_cached(request)
+            except Exception:
+                continue
+            resolved_map[id(row)] = resolved
+            instruments.append(resolved)
+        prices = {}
+        if instruments:
+            try:
+                prices = get_ltp_batch(instruments) or {}
+            except Exception:
+                prices = {}
+
+        for row in open_rows:
             stale = str(row.get("session") or "") < str(now.date())
             try:
                 entry = float(row["price"])
@@ -224,9 +409,18 @@ def refresh_positions():
                 if stale and row.get("ltp") is not None:
                     ltp = float(row["ltp"])
                 else:
-                    instrument = resolve_symbol_cached(row["symbol"])
-                    quote = get_quote(instrument)
-                    ltp = float(quote.get("last_price") or 0)
+                    resolved = resolved_map.get(id(row))
+                    ltp = 0.0
+                    if resolved:
+                        ltp = float(
+                            prices.get(resolved.get("trading_symbol"))
+                            or prices.get(resolved.get("symbol"))
+                            or prices.get(resolved.get("display_symbol"))
+                            or prices.get(str(resolved.get("security_id") or ""))
+                            or 0
+                        )
+                    if ltp <= 0:
+                        ltp = float(row.get("ltp") or 0)
                 if ltp <= 0:
                     continue
             except Exception:
@@ -246,45 +440,49 @@ def refresh_positions():
                 exit_price, reason = tp, "TP"
             elif now.time() >= time(15, 25):
                 exit_price, reason = ltp, "EOD"
+            pnl, _ = _mark_pnl(row, ltp)
+            row["ltp"] = ltp
             if exit_price is None:
-                row["ltp"] = ltp
+                row["pnl"] = pnl
+                changed += 1
                 continue
-            multiplier = float(row.get("value_multiplier") or 1)
-            pnl = (
-                (exit_price - entry) * qty * multiplier
-                if side == "BUY"
-                else (entry - exit_price) * qty * multiplier
-            )
             row.update(
                 {
                     "status": "CLOSED",
                     "exit_price": exit_price,
                     "exit_ts": now.isoformat(),
                     "exit_reason": reason,
-                    "pnl": round(pnl, 2),
+                    "pnl": _mark_pnl(row, exit_price)[0],
                     "ltp": ltp,
                 }
             )
             changed += 1
-        _save(doc)
+        if changed:
+            _save(doc)
         return changed
 
 
-def open_positions():
+def _position_book(row):
+    inst = str(row.get("instrument") or "").upper()
+    exch = str(row.get("exchange") or "").upper()
+    if exch == "MCX" or inst in {"OPTFUT", "FUTCOM"}:
+        return "mcx"
+    if inst in {"OPTIDX", "OPTSTK", "INDEX", "FUTIDX"}:
+        return "index"
+    return "cash"
+
+
+def open_positions(session_date=None):
+    rows = fills_for_day(session_date) if session_date else _load().get("fills", [])
     positions = []
-    for row in fills_today():
+    for row in rows:
         if row.get("status") != "OPEN":
             continue
         ltp = float(row.get("ltp") or row.get("price") or 0)
         entry = float(row.get("price") or 0)
         qty = float(row.get("qty") or 0)
-        multiplier = float(row.get("value_multiplier") or 1)
         side = str(row.get("signal") or "BUY").upper()
-        pnl = (
-            (ltp - entry) * qty * multiplier
-            if side == "BUY"
-            else (entry - ltp) * qty * multiplier
-        )
+        pnl, _ = _mark_pnl(row, ltp)
         positions.append(
             {
                 "ticket": f"PAPER-{row.get('id') or row.get('symbol')}",
@@ -296,6 +494,10 @@ def open_positions():
                 "tp": row.get("tp"),
                 "pnl": round(pnl, 2),
                 "paper": True,
+                "instrument": row.get("instrument") or "",
+                "exchange": row.get("exchange") or "",
+                "security_id": str(row.get("security_id") or ""),
+                "book": _position_book(row),
             }
         )
     return positions

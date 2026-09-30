@@ -745,6 +745,12 @@ def analyze_watchlist(session_date=None):
                             f"WAIT one lot risks Rs {dist * lot_size * multiplier:.0f}, "
                             f"above Rs {risk_rs:.0f} budget"
                         )
+        hedge = is_option_hedge(item)
+        if hedge and plan:
+            plan["broke"] = False
+            plan["alert_state"] = "WAIT"
+            qty = 0
+            reason = "WAIT: hedge only — no breakout entry on the protection strike"
         rows.append(
             {
                 "rank": item.get("rank"),
@@ -755,9 +761,12 @@ def analyze_watchlist(session_date=None):
                 "instrument": resolved.get("instrument"),
                 "security_id": resolved.get("security_id"),
                 "catalyst": item.get("catalyst"),
+                "option_role": "hedge" if hedge else (item.get("option_role") or ""),
+                "hedge_for": item.get("hedge_for") or "",
+                "option_type": item.get("option_type") or "",
                 "chase_risk": chase,
                 "strategy": strategy,
-                "ok": bool(plan) and reason == "ok" and qty > 0,
+                "ok": (not hedge) and bool(plan) and reason == "ok" and qty > 0,
                 "reason": reason,
                 "momentum": mom_pct,
                 "live_price": live_price,
@@ -767,6 +776,14 @@ def analyze_watchlist(session_date=None):
             }
         )
     return rows
+
+
+def is_option_hedge(item):
+    role = str((item or {}).get("option_role") or "").strip().lower()
+    if role == "hedge":
+        return True
+    text = str((item or {}).get("catalyst") or "").lower()
+    return text.startswith("hedge") or "hedge ce" in text or "hedge pe" in text
 
 
 def catalyst_candidates(session_date=None):
@@ -779,6 +796,8 @@ def catalyst_candidates(session_date=None):
             continue
         # Cash indices provide alert context but are not directly orderable.
         if row.get("instrument") == "INDEX":
+            continue
+        if is_option_hedge(row):
             continue
         mapped_sector = sector_for_symbol(row.get("symbol") or row.get("name"))
         picks.append(

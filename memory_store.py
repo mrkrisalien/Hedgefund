@@ -37,6 +37,13 @@ def append_trade_memory(record):
     rows = _load()
     rows.append(record)
     _save(rows)
+    if str((record or {}).get("mode") or "").upper() == "LIVE":
+        try:
+            from live_book import upsert_from_memory
+
+            upsert_from_memory(record)
+        except Exception as error:
+            print(f"[LIVE BOOK] Save skipped: {error}")
     return record
 
 
@@ -299,6 +306,14 @@ def reconcile_closed_trades():
     if newly:
         _save(rows)
         print(f"[LEARNING] Reconciled {newly} closed trade(s).")
+        try:
+            from live_book import upsert_from_memory
+
+            for row in rows:
+                if str(row.get("mode") or "").upper() == "LIVE" and str(row.get("status") or "").upper() == "CLOSED":
+                    upsert_from_memory(row)
+        except Exception as error:
+            print(f"[LIVE BOOK] Close sync skipped: {error}")
     return newly
 
 
@@ -321,6 +336,12 @@ def update_live_memory_row(symbol, **fields):
         break
     if updated is not None:
         _save(rows)
+        try:
+            from live_book import upsert_from_memory
+
+            upsert_from_memory(updated)
+        except Exception as error:
+            print(f"[LIVE BOOK] Update skipped: {error}")
     return updated
 
 

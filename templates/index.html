@@ -152,6 +152,26 @@
     .opt-row { cursor: pointer; }
     .opt-row.hedge { opacity: 0.92; }
     .opt-row.selected { background: rgba(78,161,255,.08); }
+    .opt-strike {
+      display: inline-block;
+      font: 800 15px "IBM Plex Mono", ui-monospace, monospace;
+      letter-spacing: 0.03em;
+      padding: 2px 8px;
+      border-radius: 5px;
+      white-space: nowrap;
+      border: 1px solid var(--line);
+      background: #0b1522;
+    }
+    .opt-strike.CE {
+      color: var(--green);
+      border-color: rgba(61,214,140,.5);
+      background: rgba(61,214,140,.14);
+    }
+    .opt-strike.PE {
+      color: #ff9aab;
+      border-color: rgba(255,92,122,.55);
+      background: rgba(255,92,122,.16);
+    }
     .preopen-chip.short, .preopen-chip.fade { border-color: rgba(255,92,122,.45); }
     .preopen-chip.long { border-color: rgba(61,214,140,.45); }
     .preopen-chip.flat { border-color: var(--line); }
@@ -266,6 +286,7 @@
       <a href="/plan">Plan</a>
       <a class="active" href="/">Execute</a>
       <a href="/charts">Charts</a>
+      <a href="/gamma">Gamma</a>
       <a href="/settings">Settings</a>
     </nav>
     <div class="mountain-note">Good decisions come from clear information.</div>
@@ -283,6 +304,7 @@
         <a href="/plan">Plan</a>
         <a class="active" href="/">Execute</a>
         <a href="/charts">Charts</a>
+        <a href="/gamma">Gamma</a>
       </nav>
       <div>
         <div class="mode-caption">Book</div>
@@ -341,7 +363,7 @@
         <div class="card active-alert-card" id="activeAlerts">
           <div class="section-heading">
             <div class="label">🔔 Active alerts <span class="badge sell" id="activeAlertCount">0</span></div>
-            <button class="view-more" onclick="document.getElementById('watchBody').scrollIntoView()">View all →</button>
+            <button class="view-more" onclick="document.getElementById('watchIndexBody').scrollIntoView()">View all →</button>
           </div>
           <div class="alert-stack" id="activeAlertList">
             <div class="feed-empty">Waiting for live breakout plans…</div>
@@ -424,6 +446,7 @@
               <th></th>
               <th>Index</th>
               <th>Role</th>
+              <th>Strike</th>
               <th>Contract</th>
               <th>LTP</th>
               <th>Δ</th>
@@ -437,7 +460,7 @@
             </tr>
           </thead>
           <tbody id="indexOptionBody">
-            <tr><td colspan="13" class="small">Loading qualified strikes…</td></tr>
+            <tr><td colspan="14" class="small">Loading qualified strikes…</td></tr>
           </tbody>
         </table>
       </div>
@@ -503,28 +526,59 @@
     </div>
 
     <div class="card dhan-only" style="margin-top:12px">
-      <div class="label">Watchlist (5 slots, Rs 500, cash/F&O/MCX, 3m close after 09:25)</div>
-      <p id="watchMeta" style="color:var(--muted);font-size:13px">Manually added instruments use their selected strategy. Seasonal sector stocks remain separate and run in the background.</p>
-      <div style="overflow:auto">
-        <table>
-          <thead>
-            <tr>
-              <th>#</th><th>Name</th><th>Symbol</th><th>Strategy</th><th>Setup</th>
-              <th>Entry</th><th>SL</th><th>TP</th><th>Exit</th><th>Qty</th><th>Note</th><th></th>
-            </tr>
-          </thead>
-          <tbody id="watchBody"></tbody>
-        </table>
-      </div>
+      <div class="label">Watchlists · 5 mixed slots · Rs 500</div>
+      <p id="watchMeta" style="color:var(--muted);font-size:13px">Index, cash, MCX and crypto stay in separate books. Manual names keep their strategy.</p>
+    </div>
+    <div class="card dhan-only" style="margin-top:12px">
+      <div class="label">Index watchlist</div>
+      <div class="small" id="watchIndexMeta">OPTIDX / index alerts</div>
+      <div style="overflow:auto"><table>
+        <thead><tr>
+          <th>#</th><th>Name</th><th>Symbol</th><th>Strategy</th><th>Setup</th>
+          <th>Entry</th><th>SL</th><th>TP</th><th>Exit</th><th>Qty</th><th>Note</th><th></th>
+        </tr></thead>
+        <tbody id="watchIndexBody"></tbody>
+      </table></div>
+    </div>
+    <div class="card dhan-only" style="margin-top:12px">
+      <div class="label">Cash watchlist</div>
+      <div class="small" id="watchCashMeta">NSE / BSE equities</div>
+      <div style="overflow:auto"><table>
+        <thead><tr>
+          <th>#</th><th>Name</th><th>Symbol</th><th>Strategy</th><th>Setup</th>
+          <th>Entry</th><th>SL</th><th>TP</th><th>Exit</th><th>Qty</th><th>Note</th><th></th>
+        </tr></thead>
+        <tbody id="watchCashBody"></tbody>
+      </table></div>
+    </div>
+    <div class="card dhan-only" style="margin-top:12px">
+      <div class="label">MCX watchlist</div>
+      <div class="small" id="watchMcxMeta">Commodity futures / options</div>
+      <div style="overflow:auto"><table>
+        <thead><tr>
+          <th>#</th><th>Name</th><th>Symbol</th><th>Strategy</th><th>Setup</th>
+          <th>Entry</th><th>SL</th><th>TP</th><th>Exit</th><th>Qty</th><th>Note</th><th></th>
+        </tr></thead>
+        <tbody id="watchMcxBody"></tbody>
+      </table></div>
+    </div>
+    <div class="card dhan-only" style="margin-top:12px">
+      <div class="label">Crypto watchlist</div>
+      <div class="small" id="watchCryptoMeta">Delta paper markets</div>
+      <div style="overflow:auto"><table>
+        <thead><tr><th>Symbol</th><th>Market</th><th>Strategy</th><th>Today</th></tr></thead>
+        <tbody id="watchCryptoBody"></tbody>
+      </table></div>
     </div>
 
     <div class="card dhan-only" style="margin-top:12px">
       <div class="label">Portfolio exposure</div>
+      <div class="small" id="positionMeta">Cash, index options, and MCX fills. Close books P&amp;L.</div>
       <div style="overflow:auto">
         <table>
           <thead>
             <tr>
-              <th>Ticket</th><th>Symbol</th><th>Side</th><th>Qty</th>
+              <th>Book</th><th>Symbol</th><th>Side</th><th>Qty</th>
               <th>Price</th><th>SL</th><th>TP</th><th>uPnL</th><th></th>
             </tr>
           </thead>
@@ -649,7 +703,7 @@
           <thead>
             <tr>
               <th>Time</th><th>Symbol</th><th>Side</th><th>Entry</th>
-              <th>SL</th><th>TP</th><th>Exit</th><th>Qty</th><th>P&L</th><th>P&L %</th><th>Deal</th><th>Status</th>
+              <th>SL</th><th>TP</th><th>Exit</th><th>Qty</th><th>P&L</th><th>P&L %</th><th>Deal</th><th>Status</th><th></th>
             </tr>
           </thead>
           <tbody id="fillBody"></tbody>
@@ -692,6 +746,7 @@
     let engineRunning = false;
     let latestTradeCount = 0;
     let watchlistItems = [];
+    let watchlistBusy = false;
     let deltaUniverseItems = [];
     let deltaKillSwitch = false;
     let breakoutAlertsEnabled = localStorage.getItem("breakoutAlertsEnabled") === "true";
@@ -822,16 +877,16 @@
           (data.errors || []).length ? data.errors.join(" · ") : (data.rule || "")
         ].filter(Boolean).join(" · ");
         if (!data.ok && data.error) {
-          body.innerHTML = `<tr><td colspan="13" class="small">${escapeHtml(data.error)}</td></tr>`;
+          body.innerHTML = `<tr><td colspan="14" class="small">${escapeHtml(data.error)}</td></tr>`;
           return;
         }
         if (data.note && !(data.rows || []).length) {
-          body.innerHTML = `<tr><td colspan="13" class="small">${escapeHtml(data.note)}</td></tr>`;
+          body.innerHTML = `<tr><td colspan="14" class="small">${escapeHtml(data.note)}</td></tr>`;
           return;
         }
         if (!(data.rows || []).length) {
           const extra = (data.errors || []).join(" · ");
-          body.innerHTML = `<tr><td colspan="13" class="small">${escapeHtml(extra || "No liquid strikes passed the filter.")}</td></tr>`;
+          body.innerHTML = `<tr><td colspan="14" class="small">${escapeHtml(extra || "No liquid strikes passed the filter.")}</td></tr>`;
           return;
         }
         body.innerHTML = data.rows.map((row, index) => `
@@ -839,6 +894,7 @@
             <td><input type="checkbox" ${row.selected ? "checked" : ""} onclick="event.stopPropagation(); markIndexOption(${index}, this.checked)" /></td>
             <td>${escapeHtml(row.underlying)}</td>
             <td>${escapeHtml(row.role_label || row.role)}</td>
+            <td><span class="opt-strike ${escapeHtml(row.option_type || "")}">${row.strike != null ? Number(row.strike).toLocaleString("en-IN") : "--"} ${escapeHtml(row.option_type || "")}</span></td>
             <td>${escapeHtml(row.contract)}</td>
             <td>${row.ltp != null ? row.ltp : "--"}</td>
             <td>${row.delta != null ? Number(row.delta).toFixed(2) : "--"}</td>
@@ -851,7 +907,7 @@
             <td class="small">${escapeHtml(row.why || "")}</td>
           </tr>`).join("");
       } catch (error) {
-        body.innerHTML = `<tr><td colspan="13" class="small">Option chain unavailable: ${escapeHtml(String(error))}</td></tr>`;
+        body.innerHTML = `<tr><td colspan="14" class="small">Option chain unavailable: ${escapeHtml(String(error))}</td></tr>`;
       }
     }
 
@@ -876,9 +932,24 @@
         document.getElementById("inputStatus").textContent = "Tick at least one strike.";
         return;
       }
-      await refreshInputCenter();
-      const keys = new Set(watchlistItems.map(watchKey));
+      if (!watchlistBusy) await refreshInputCenter();
+      const pool = window.indexOptionRows || [];
+      const byContract = {};
+      pool.forEach((row) => { byContract[row.contract] = row; });
+      const paired = [];
       rows.forEach((row) => {
+        paired.push(row);
+        if (row.role === "directional") {
+          const hedge = pool.find((item) => item.role === "hedge" && item.underlying === row.underlying && (item.hedge_for === row.contract || !item.hedge_for))
+            || pool.find((item) => item.role === "hedge" && item.underlying === row.underlying);
+          if (hedge) paired.push(hedge);
+        }
+        if (row.role === "hedge" && row.hedge_for && byContract[row.hedge_for]) {
+          paired.push(byContract[row.hedge_for]);
+        }
+      });
+      const keys = new Set(watchlistItems.map(watchKey));
+      paired.forEach((row) => {
         const item = {
           rank: watchlistItems.length + 1,
           name: row.contract,
@@ -889,7 +960,10 @@
           catalyst: `${row.role_label || row.role} · ${row.why || ""}`,
           chase_risk: "medium",
           security_id: String(row.security_id || ""),
-          expiry: row.expiry || ""
+          expiry: row.expiry || "",
+          option_role: row.role || "directional",
+          hedge_for: row.hedge_for || "",
+          option_type: row.option_type || ""
         };
         const key = watchKey(item);
         if (keys.has(key)) return;
@@ -1262,101 +1336,23 @@
       const watch = data.watchlist || [];
       window._watchRows = watch;
       renderActiveAlerts(watch);
-      const watchBody = document.getElementById("watchBody");
-      if (watchBody) {
-        watchBody.innerHTML = "";
-        const executionMode = data.paper_trade
-          ? "PAPER"
-          : (data.trading_enabled ? "LIVE" : "BLOCKED");
-        const slotState = data.orders_placed
-          ? "Today’s manual and seasonal entry slots are complete; live entry/SL/TP monitoring continues."
-          : "Waiting for a valid manual or seasonal breakout.";
-        document.getElementById("watchMeta").textContent = data.catalyst_mode
-          ? `Manual strategy mode on. ${executionMode} book ${data.book_date || ""} · 5 mixed slots · Rs 500 · kill Rs 3000 · 1/sector after 09:25 · ${slotState}`
-          : "Catalyst mode off.";
-        watch.forEach((w) => {
-          notifyBreakout(w);
-          const tr = document.createElement("tr");
-          if (w.alert_state === "BREAKOUT") {
-            tr.style.background = w.volume_spike
-              ? "rgba(61,214,140,.16)"
-              : "rgba(78,161,255,.12)";
-          }
-          const volumeNote = w.volume_ratio_5m != null
-            ? `VOL ${Number(w.volume_ratio_5m).toFixed(2)}x${w.volume_spike ? " SPIKE" : ""}`
-            : "VOL n/a";
-          const oiNote = w.oi_change_pct != null
-            ? `OI ${Number(w.oi_change_pct).toFixed(1)}%${w.oi_spike ? " SPIKE" : ""}`
-            : (w.oi != null ? "OI baseline" : "OI n/a");
-          tr.innerHTML = `<td>${w.rank || ""}</td><td>${w.name || ""}</td>
-            <td>${w.symbol || ""}</td>`;
-          const strategyCell = document.createElement("td");
-          if (w.paper_only) {
-            strategyCell.textContent = "Paper fill";
-          } else {
-            const strategySelect = document.createElement("select");
-            strategySelect.className = "table-strategy-select";
-            [
-              ["breakout", "Breakout · previous candle SL"],
-              ["range_breakout", "2-hour range breakout"],
-              ["consolidation", "Consolidation break"],
-              ["trend_break", "Trend break"]
-            ].forEach(([value, label]) => {
-              const option = document.createElement("option");
-              option.value = value;
-              option.textContent = label;
-              option.selected = String(w.strategy || "breakout") === value;
-              strategySelect.appendChild(option);
-            });
-            const saveStrategy = document.createElement("button");
-            saveStrategy.className = "table-save";
-            saveStrategy.textContent = "Save";
-            saveStrategy.disabled = true;
-            strategySelect.onchange = () => {
-              saveStrategy.disabled =
-                strategySelect.value === String(w.strategy || "breakout");
-              saveStrategy.textContent = "Save";
-            };
-            saveStrategy.onclick = () =>
-              saveInlineStrategy(w, strategySelect, saveStrategy);
-            strategyCell.appendChild(strategySelect);
-            strategyCell.appendChild(saveStrategy);
-          }
-          tr.appendChild(strategyCell);
-          const setupLabel = w.alert_state === "BREAKOUT"
-            ? "BREAKOUT"
-            : (w.setup || (w.ok ? "ready" : "wait"));
-          const exitLabel = w.exit != null && w.exit !== ""
-            ? `${w.exit}${w.exit_reason ? " · " + w.exit_reason : ""}`
-            : "";
-          tr.insertAdjacentHTML("beforeend", `
-            <td>${setupLabel}</td>
-            <td>${w.entry ?? ""}</td><td>${w.sl ?? ""}</td><td>${w.tp ?? ""}</td>
-            <td>${exitLabel}</td>
-            <td>${w.qty ?? ""}</td><td>${w.reason || w.catalyst || ""} · ${volumeNote} · ${oiNote}</td>`);
-          const action = document.createElement("td");
-          if (!w.paper_only) {
-            const remove = document.createElement("button");
-            remove.className = "danger";
-            remove.textContent = "Remove";
-            remove.onclick = () => removeWatchlistStock({
-              ...w,
-              symbol: w.input_symbol || w.symbol
-            });
-            action.appendChild(remove);
-          }
-          tr.appendChild(action);
-          watchBody.appendChild(tr);
-        });
-      }
+      renderSplitWatchlists(watch, data);
 
       const posBody = document.getElementById("positionBody");
+      const posMeta = document.getElementById("positionMeta");
+      window._openPositions = data.open_positions || [];
       posBody.innerHTML = "";
-      (data.open_positions || []).forEach((p) => {
+      const books = { cash: 0, index: 0, mcx: 0 };
+      window._openPositions.forEach((p) => {
+        const book = String(p.book || positionBook(p)).toLowerCase();
+        books[book] = (books[book] || 0) + 1;
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${p.ticket || ""}</td><td>${p.symbol || ""}</td><td>${p.side || ""}</td>
+        const pnl = Number(p.pnl);
+        tr.className = Number.isFinite(pnl) && pnl < 0 ? "pnl-down" : Number.isFinite(pnl) && pnl > 0 ? "pnl-up" : "";
+        tr.innerHTML = `<td>${escapeHtml(book)}</td><td>${highlightOptionName(p.symbol || "")}</td>
+          <td>${escapeHtml(p.side || "")}</td>
           <td>${p.volume || ""}</td><td>${p.price || ""}</td><td>${p.sl || ""}</td>
-          <td>${p.tp || ""}</td><td>${p.pnl || ""}</td>`;
+          <td>${p.tp || ""}</td><td>${Number.isFinite(pnl) ? pnl.toFixed(2) : ""}</td>`;
         const td = document.createElement("td");
         const btn = document.createElement("button");
         btn.className = "danger";
@@ -1366,6 +1362,12 @@
         tr.appendChild(td);
         posBody.appendChild(tr);
       });
+      if (!window._openPositions.length) {
+        posBody.innerHTML = `<tr><td colspan="9" class="small">No open cash, index option, or MCX fills.</td></tr>`;
+      }
+      if (posMeta) {
+        posMeta.textContent = `${books.index || 0} index · ${books.cash || 0} cash · ${books.mcx || 0} MCX · Close books P&L`;
+      }
 
       const rulesBody = document.getElementById("rulesBody");
       rulesBody.innerHTML = "";
@@ -1393,13 +1395,25 @@
         const tr = document.createElement("tr");
         const when = t.time ? new Date(t.time).toLocaleTimeString() : "--";
         const exitPx = t.exit_price != null ? t.exit_price : "";
-        const pnl = t.pnl != null && t.pnl !== "" ? t.pnl : "";
-        const pnlPct = t.pnl_pct != null && t.pnl_pct !== "" ? t.pnl_pct + "%" : "";
-        tr.innerHTML = `<td>${when}</td><td>${t.symbol || t.asset || ""}</td>
+        const pnl = Number(t.pnl);
+        const pnlPct = Number(t.pnl_pct);
+        const pnlText = Number.isFinite(pnl) ? pnl.toFixed(2) : "";
+        const pnlPctText = Number.isFinite(pnlPct) ? pnlPct.toFixed(2) + "%" : "";
+        tr.className = Number.isFinite(pnl) && pnl < 0 ? "pnl-down" : Number.isFinite(pnl) && pnl > 0 ? "pnl-up" : "";
+        tr.innerHTML = `<td>${when}</td><td>${highlightOptionName(t.symbol || t.asset || "")}</td>
           <td>${t.side || t.signal || ""}</td><td>${t.fill || t.price || ""}</td>
           <td>${t.sl || ""}</td><td>${t.tp || ""}</td><td>${exitPx}</td>
-          <td>${t.volume || ""}</td><td>${pnl}</td><td>${pnlPct}</td><td>${t.deal || ""}</td>
+          <td>${t.volume || ""}</td><td>${pnlText}</td><td>${pnlPctText}</td><td>${t.deal || ""}</td>
           <td>${t.status || ""}${t.exit_reason ? " · " + t.exit_reason : ""}</td>`;
+        const action = document.createElement("td");
+        if (String(t.status || "").toUpperCase() === "OPEN" && (t.ticket || t.id)) {
+          const btn = document.createElement("button");
+          btn.className = "danger";
+          btn.textContent = "Close";
+          btn.onclick = () => closeTicket(t.ticket || ("PAPER-" + t.id));
+          action.appendChild(btn);
+        }
+        tr.appendChild(action);
         fillBody.appendChild(tr);
       });
     }
@@ -1559,13 +1573,24 @@
     }
 
     async function closeTicket(ticket) {
-      if (!confirm("Close position " + ticket + "?")) return;
-      await fetch("/api/close", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticket: String(ticket) })
-      });
-      pollBackend();
+      const id = String(ticket || "").trim();
+      if (!id) return;
+      if (!confirm("Close " + id + " and book P&L?")) return;
+      try {
+        const response = await fetch("/api/close", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ticket: id })
+        });
+        const data = await response.json();
+        if (!response.ok || data.success === false) {
+          throw new Error(data.error || "Close failed");
+        }
+      } catch (error) {
+        alert(error.message || String(error));
+        return;
+      }
+      await pollBackend();
     }
 
     async function runAudit() {
@@ -1731,11 +1756,189 @@
     }
 
     function watchKey(row) {
+      const sid = String((row && row.security_id) || "").trim();
+      if (sid) return "SID:" + sid;
       return [
-        row.exchange || "NSE",
-        row.instrument || "EQUITY",
-        row.symbol || row.name || ""
+        (row && row.exchange) || "NSE",
+        (row && row.instrument) || "EQUITY",
+        (row && (row.symbol || row.name)) || ""
       ].map((value) => String(value).trim().toUpperCase()).join(":");
+    }
+
+    function watchBook(row) {
+      const inst = String((row && row.instrument) || "").toUpperCase();
+      const exch = String((row && row.exchange) || "").toUpperCase();
+      if (exch === "MCX" || inst === "OPTFUT" || inst === "FUTCOM") return "mcx";
+      if (inst === "OPTIDX" || inst === "OPTSTK" || inst === "INDEX" || inst === "FUTIDX") return "index";
+      return "cash";
+    }
+
+    function positionBook(row) {
+      return String((row && row.book) || watchBook(row) || "cash").toLowerCase();
+    }
+
+    function optionMatchKey(value) {
+      const text = String(value || "").toUpperCase()
+        .replace(/\bPUT\b/g, "PE")
+        .replace(/\bCALL\b/g, "CE");
+      const side = (text.match(/\b(CE|PE)\b/) || [])[1] || "";
+      const strike = (text.match(/\b(\d{4,6})\b/) || [])[1] || "";
+      const und = (text.match(/^(NIFTY|BANKNIFTY|SENSEX|FINNIFTY|MIDCPNIFTY)/) || [])[1] || "";
+      if (und && strike && side) return und + ":" + strike + ":" + side;
+      return text.replace(/[^A-Z0-9]/g, "");
+    }
+
+    function highlightOptionName(name) {
+      return String(name || "").replace(
+        /(\d{4,6})\s*(CE|PE)\b/gi,
+        (_, strike, side) => `<span class="opt-strike ${side.toUpperCase()}">${Number(strike).toLocaleString("en-IN")} ${side.toUpperCase()}</span>`
+      );
+    }
+
+    function findOpenPosition(row, positions) {
+      const sid = String((row && (row.security_id || "")) || "").replace(/^PAPER-/i, "").trim();
+      const keys = [row && row.symbol, row && row.name, row && row.input_symbol]
+        .filter(Boolean)
+        .map(optionMatchKey);
+      return (positions || []).find((item) => {
+        const itemSid = String(item.security_id || "").replace(/^PAPER-/i, "").trim();
+        if (sid && itemSid && sid === itemSid) return true;
+        const itemKey = optionMatchKey(item.symbol);
+        return keys.some((key) => key && itemKey && (key === itemKey || key.includes(itemKey) || itemKey.includes(key)));
+      });
+    }
+
+    function fillWatchRow(w) {
+      notifyBreakout(w);
+      const tr = document.createElement("tr");
+      if (w.alert_state === "BREAKOUT") {
+        tr.style.background = w.volume_spike
+          ? "rgba(61,214,140,.16)"
+          : "rgba(78,161,255,.12)";
+      }
+      const volumeNote = w.volume_ratio_5m != null
+        ? `VOL ${Number(w.volume_ratio_5m).toFixed(2)}x${w.volume_spike ? " SPIKE" : ""}`
+        : "VOL n/a";
+      const oiNote = w.oi_change_pct != null
+        ? `OI ${Number(w.oi_change_pct).toFixed(1)}%${w.oi_spike ? " SPIKE" : ""}`
+        : (w.oi != null ? "OI baseline" : "OI n/a");
+      const optionName = String(w.name || "").replace(
+        /(\d{4,6})\s+(CE|PE)\b/gi,
+        (_, strike, side) => `<span class="opt-strike ${side.toUpperCase()}">${Number(strike).toLocaleString("en-IN")} ${side.toUpperCase()}</span>`
+      );
+      const optionSymbol = String(w.symbol || "").replace(
+        /(\d{4,6})\s+(CE|PE)\b/gi,
+        (_, strike, side) => `<span class="opt-strike ${side.toUpperCase()}">${Number(strike).toLocaleString("en-IN")} ${side.toUpperCase()}</span>`
+      );
+      tr.innerHTML = `<td>${w.rank || ""}</td><td>${optionName}</td>
+        <td>${optionSymbol}</td>`;
+      const strategyCell = document.createElement("td");
+      if (w.paper_only) {
+        strategyCell.textContent = "Paper fill";
+      } else {
+        const strategySelect = document.createElement("select");
+        strategySelect.className = "table-strategy-select";
+        [
+          ["breakout", "Breakout · previous candle SL"],
+          ["range_breakout", "2-hour range breakout"],
+          ["consolidation", "Consolidation break"],
+          ["trend_break", "Trend break"]
+        ].forEach(([value, label]) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          option.selected = String(w.strategy || "breakout") === value;
+          strategySelect.appendChild(option);
+        });
+        const saveStrategy = document.createElement("button");
+        saveStrategy.className = "table-save";
+        saveStrategy.textContent = "Save";
+        saveStrategy.disabled = true;
+        strategySelect.onchange = () => {
+          saveStrategy.disabled =
+            strategySelect.value === String(w.strategy || "breakout");
+          saveStrategy.textContent = "Save";
+        };
+        saveStrategy.onclick = () =>
+          saveInlineStrategy(w, strategySelect, saveStrategy);
+        strategyCell.appendChild(strategySelect);
+        strategyCell.appendChild(saveStrategy);
+      }
+      tr.appendChild(strategyCell);
+      const setupLabel = w.alert_state === "BREAKOUT"
+        ? "BREAKOUT"
+        : (w.setup || (w.ok ? "ready" : "wait"));
+      const exitLabel = w.exit != null && w.exit !== ""
+        ? `${w.exit}${w.exit_reason ? " · " + w.exit_reason : ""}`
+        : "";
+      tr.insertAdjacentHTML("beforeend", `
+        <td>${setupLabel}</td>
+        <td>${w.entry ?? ""}</td><td>${w.sl ?? ""}</td><td>${w.tp ?? ""}</td>
+        <td>${exitLabel}</td>
+        <td>${w.qty ?? ""}</td><td>${w.reason || w.catalyst || ""} · ${volumeNote} · ${oiNote}</td>`);
+      const action = document.createElement("td");
+      const open = findOpenPosition(w, window._openPositions || []);
+      if (open) {
+        const closeBtn = document.createElement("button");
+        closeBtn.className = "danger";
+        closeBtn.textContent = "Close";
+        closeBtn.onclick = () => closeTicket(open.ticket);
+        action.appendChild(closeBtn);
+      }
+      if (!w.paper_only) {
+        const remove = document.createElement("button");
+        remove.className = "danger";
+        remove.textContent = "Remove";
+        remove.onclick = () => removeWatchlistStock({
+          ...w,
+          symbol: w.input_symbol || w.symbol
+        });
+        action.appendChild(remove);
+      }
+      tr.appendChild(action);
+      return tr;
+    }
+
+    function renderSplitWatchlists(watch, data) {
+      const groups = { index: [], cash: [], mcx: [] };
+      (watch || []).forEach((row) => groups[watchBook(row)].push(row));
+      const executionMode = data.paper_trade
+        ? "PAPER"
+        : (data.trading_enabled ? "LIVE" : "BLOCKED");
+      const slotState = data.orders_placed
+        ? "Today’s slots are complete; live entry/SL/TP monitoring continues."
+        : "Waiting for a valid manual or seasonal breakout.";
+      const meta = document.getElementById("watchMeta");
+      if (meta) {
+        meta.textContent = data.catalyst_mode
+          ? `${executionMode} ${data.book_date || ""} · 5 mixed slots · Rs 500 · ${slotState}`
+          : "Catalyst mode off.";
+      }
+      [
+        ["watchIndexBody", "watchIndexMeta", groups.index, "No index contracts"],
+        ["watchCashBody", "watchCashMeta", groups.cash, "No cash names"],
+        ["watchMcxBody", "watchMcxMeta", groups.mcx, "No MCX names"]
+      ].forEach(([bodyId, metaId, rows, empty]) => {
+        const body = document.getElementById(bodyId);
+        const note = document.getElementById(metaId);
+        if (!body) return;
+        body.innerHTML = "";
+        if (!rows.length) {
+          body.innerHTML = `<tr><td colspan="12" class="small">${empty}</td></tr>`;
+        } else {
+          rows.forEach((row) => body.appendChild(fillWatchRow(row)));
+        }
+        if (note) note.textContent = `${rows.length} name(s)`;
+      });
+      const cryptoBody = document.getElementById("watchCryptoBody");
+      const cryptoMeta = document.getElementById("watchCryptoMeta");
+      const crypto = data.crypto_watchlist || [];
+      if (cryptoBody) {
+        cryptoBody.innerHTML = crypto.length
+          ? crypto.map((row) => `<tr><td>${row.symbol || ""}</td><td>${row.market || ""}</td><td>${row.strategy || ""}</td><td>${row.confirmed ? "Approved" : "Watch"}</td></tr>`).join("")
+          : `<tr><td colspan="4" class="small">No crypto markets</td></tr>`;
+      }
+      if (cryptoMeta) cryptoMeta.textContent = `${crypto.length} Delta market(s)`;
     }
 
     function updateInstrumentPlaceholder() {
@@ -1753,6 +1956,7 @@
     }
 
     async function refreshInputCenter() {
+      if (watchlistBusy) return;
       try {
         const response = await fetch("/api/watchlist");
         const data = await response.json();
@@ -1768,6 +1972,7 @@
     async function saveInputCenter(message) {
       const status = document.getElementById("inputStatus");
       status.textContent = "Saving...";
+      watchlistBusy = true;
       try {
         const response = await fetch("/api/watchlist", {
           method: "POST",
@@ -1786,6 +1991,8 @@
       } catch (error) {
         status.textContent = "Save failed: " + error;
         return false;
+      } finally {
+        watchlistBusy = false;
       }
     }
 

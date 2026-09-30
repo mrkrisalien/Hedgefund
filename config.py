@@ -13,11 +13,11 @@ if load_dotenv:
 MEMORY_FILE = BASE_DIR / "memory.json"
 RULES_FILE = BASE_DIR / "new_rules.json"
 
-# Generate these from the Dhan web/app: My Profile -> DhanHQ Trading APIs.
-# You can also set them as environment variables instead of editing this file.
-DHAN_CLIENT_ID = os.getenv("DHAN_CLIENT_ID", "")
-DHAN_ACCESS_TOKEN = os.getenv("DHAN_ACCESS_TOKEN", "")
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+# Secrets are entered on the dashboard Settings page and held in the browser
+# plus process memory. Do not hardcode them here or in .env.
+DHAN_CLIENT_ID = ""
+DHAN_ACCESS_TOKEN = ""
+GROQ_API_KEY = ""
 
 # Quantity in shares (or lots for F&O/MCX after resolution uses lot size
 # only as a minimum). Keep this small while testing.
@@ -139,11 +139,11 @@ BROKERAGE_CAP = 20.0
 STT_SELL_RATE = 0.00025
 OTHER_CHARGE_RATE = 0.0001
 
-DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
+DEEPSEEK_API_KEY = ""
 
 # --- Delta Exchange (BTC options / perp). Separate desk from Dhan. ---
-DELTA_API_KEY = os.getenv("DELTA_API_KEY", "")
-DELTA_API_SECRET = os.getenv("DELTA_API_SECRET", "")
+DELTA_API_KEY = ""
+DELTA_API_SECRET = ""
 DELTA_BASE_URL = os.getenv("DELTA_BASE_URL", "https://api.india.delta.exchange")
 DELTA_PAPER = True
 DELTA_TRADING_ENABLED = False

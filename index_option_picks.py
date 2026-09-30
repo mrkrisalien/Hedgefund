@@ -269,6 +269,27 @@ def _fetch_index(meta):
     }
 
 
+def _trend_side(briefing, overnight):
+    """Overnight cue yields to cash trend. Do not buy PE into a rising tape."""
+    quotes = (briefing or {}).get("quotes") or {}
+    nifty = quotes.get("nifty") or {}
+    gift = quotes.get("gift") or {}
+    try:
+        chg = nifty.get("change_pct")
+        if chg is None:
+            chg = gift.get("change_pct")
+        chg = float(chg) if chg is not None else None
+    except (TypeError, ValueError):
+        chg = None
+    if chg is None:
+        return overnight or "flat"
+    if chg >= 0.15:
+        return "long"
+    if chg <= -0.15:
+        return "short"
+    return overnight or "flat"
+
+
 def _direction(side):
     if side in {"short", "fade"}:
         return "PE", "CE", "Buy PE (short/fade)", "Hedge CE"
@@ -374,20 +395,29 @@ def build_picks(force=False):
 
         briefing = build_briefing()
         daily = briefing.get("daily") or {}
-        side = daily.get("side") or "flat"
+        overnight = daily.get("side") or "flat"
+        side = _trend_side(briefing, overnight)
         vix = ((briefing.get("quotes") or {}).get("india_vix") or {}).get("last")
         vix_volatile = bool(briefing.get("vix_volatile"))
+        title = daily.get("title") or "No daily side"
+        if side != overnight and side in {"long", "short"}:
+            title = (
+                "Cash is up — buy CE, hedge PE"
+                if side == "long"
+                else "Cash is down — buy PE, hedge CE"
+            )
         payload = {
             "ok": True,
             "generated_at": datetime.now(IST).isoformat(),
             "side": side,
-            "title": daily.get("title") or "No daily side",
+            "overnight_side": overnight,
+            "title": title,
             "vix": vix,
             "vix_volatile": vix_volatile,
             "rule": (
-                "Only liquid ATM/near-OTM strikes. Buy the signal side, hedge with the "
-                "other side. Default strategy is breakout. Engine stays off until you add "
-                "and start it. ₹500 risk still applies — index lots can exceed that."
+                "Follow the cash trend. Long tape: buy CE and park PE as hedge. "
+                "Short tape: buy PE and park CE as hedge. Hedge stays on the book "
+                "but never takes its own breakout. ₹500 risk still applies."
             ),
             "rows": [],
             "errors": [],

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Command · Market Command</title>
+  <link rel="stylesheet" href="/app-static/shell.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="side-logo">MARKET <span>COMMAND</span></div>
+    <div class="side-group">One desk</div>
+    <nav class="side-nav">
+      <a class="active" href="/command">Command</a>
+      <a href="/plan">Plan</a>
+      <a href="/">Execute</a>
+      <a href="/charts">Charts</a>
+      <a href="/gamma">Gamma</a>
+      <a href="/settings">Settings</a>
+    </nav>
+    <div class="side-note">marketalerts tape. No orders from this page.</div>
+  </aside>
+  <div class="app-frame">
+    <div id="keyExpiryBanner" class="key-banner" hidden></div>
+    <header class="shell-top">
+      <div>
+        <div class="brand">COMMAND <span>TAPE</span></div>
+        <div class="sub">09:00 briefing · Nifty · VIX · GIFT · read only</div>
+      </div>
+      <div class="controls">
+        <nav class="desk-switch">
+          <a class="active" href="/command">Command</a>
+          <a href="/plan">Plan</a>
+          <a href="/">Execute</a>
+          <a href="/charts">Charts</a>
+          <a href="/gamma">Gamma</a>
+        </nav>
+        <div>
+          <div class="mode-caption">Today</div>
+          <div class="mode-toggle">
+            <button type="button" id="modePaper" class="paper" onclick="setDeskMode('paper')">Paper</button>
+            <button type="button" id="modeLive" class="live" onclick="setDeskMode('live')">Live</button>
+          </div>
+        </div>
+        <span id="engineControlStatus" class="sub"></span>
+      </div>
+      <div class="live-clock" id="liveClock">IST --:--:--</div>
+    </header>
+    <main class="shell-main">
+      <div class="card">
+        <div class="label">09:00–09:15 IST pre-open</div>
+        <p class="sub" id="preopenMeta">Dow, Nasdaq, India VIX, NSE breadth, GIFT/SGX. Bias only — no order.</p>
+        <div class="check-grid" id="preopenChecks">Loading briefing…</div>
+        <div class="play-box" id="preopenPlay">
+          <div class="label">Cash or options</div>
+          <div class="stat" id="preopenTitle" style="font-size:18px">Waiting…</div>
+          <p class="sub" id="preopenBody" style="margin-top:8px;line-height:1.5"></p>
+        </div>
+        <div class="play-box" id="dailyPlay">
+          <div class="label">Today’s side · 2-year bucket</div>
+          <div class="stat" id="dailyTitle" style="font-size:18px">Waiting…</div>
+          <p class="sub" id="dailyStats" style="margin-top:8px"></p>
+          <p class="sub" id="dailyBody" style="margin-top:8px;line-height:1.5"></p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">Market pulse</div>
+        <div class="pulse-strip" id="pulseStrip">Loading tape…</div>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="label">India</div>
+          <div id="idxList"></div>
+        </div>
+        <div class="card">
+          <div class="label">MCX</div>
+          <div id="mcxList"></div>
+        </div>
+        <div class="card">
+          <div class="label">Crypto</div>
+          <div id="cryptoList"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">How this page is used</div>
+        <p>This is the marketalerts job inside the one shell. Bias only. Open Plan next, then Execute after 09:25. Full MarketAlerts board stays at <a class="quiet" href="http://127.0.0.1:8050">127.0.0.1:8050</a> if that process is running.</p>
+      </div>
+    </main>
+  </div>
+  <script src="/static/keys.js"></script>
+  <script src="/app-static/shell.js"></script>
+  <script>
+    async function loadPreopen() {
+      try {
+        const res = await fetch("/api/preopen");
+        const data = await res.json();
+        const host = document.getElementById("preopenChecks");
+        const checks = data.checks || [];
+        host.innerHTML = checks.map((item) => `
+          <div class="check-tile ${item.status || "wait"}">
+            <div class="label">${item.name}</div>
+            <div class="stat" style="font-size:16px;text-transform:capitalize">${item.status || "wait"}</div>
+            <div class="sub" style="margin-top:8px;line-height:1.4">${item.detail || ""}</div>
+          </div>`).join("") || "Briefing unavailable.";
+        const rec = data.recommendation || {};
+        const box = document.getElementById("preopenPlay");
+        box.className = "play-box " + (rec.instrument || "wait");
+        document.getElementById("preopenTitle").textContent = rec.title || "Wait";
+        document.getElementById("preopenBody").textContent = rec.body || data.error || "";
+        const daily = data.daily || {};
+        const dailyBox = document.getElementById("dailyPlay");
+        dailyBox.className = "play-box " + (daily.side || "wait");
+        document.getElementById("dailyTitle").textContent = daily.title || "No daily side";
+        const bits = [];
+        if (daily.label) bits.push(daily.label);
+        if (daily.days) bits.push(daily.days + " days like this");
+        if (daily.short_win_pct != null) bits.push("short won " + daily.short_win_pct + "%");
+        if (daily.long_win_pct != null) bits.push("long won " + daily.long_win_pct + "%");
+        if (daily.max_dd_pct != null) bits.push("short DD " + daily.max_dd_pct + "%");
+        bits.push("expires " + (daily.expires || "15:30 IST"));
+        document.getElementById("dailyStats").textContent = bits.join(" · ");
+        document.getElementById("dailyBody").textContent = daily.body || daily.note || "";
+        const when = data.generated_at ? new Date(data.generated_at).toLocaleTimeString() : "";
+        document.getElementById("preopenMeta").textContent =
+          (data.in_window ? "Inside the 09:00–09:15 window. " : "Saved briefing — still bias only. ") +
+          (when ? "Updated " + when + " IST." : "");
+      } catch (error) {
+        document.getElementById("preopenChecks").textContent = "Pre-open feed unavailable.";
+      }
+    }
+    function row(item) {
+      if (!item) return "";
+      const pct = Number(item.change_pct);
+      const cls = Number.isFinite(pct) ? (pct >= 0 ? "up" : "down") : "";
+      const last = item.last == null ? "--" : Number(item.last).toLocaleString();
+      const move = Number.isFinite(pct) ? (pct >= 0 ? "+" : "") + pct.toFixed(2) + "%" : "";
+      return `<div class="pulse-tile"><div class="label">${item.short || item.name}</div>
+        <div class="pulse-price">${last}</div>
+        <div class="${cls}">${move}</div></div>`;
+    }
+    async function loadPulse() {
+      try {
+        const res = await fetch("/api/market/pulse");
+        const data = await res.json();
+        const primary = (data.primary || []).filter(Boolean);
+        document.getElementById("pulseStrip").innerHTML = primary.map(row).join("") || "No tape yet. Save Dhan keys in Settings.";
+        document.getElementById("idxList").innerHTML = (data.indices || []).map(row).join("") || "—";
+        document.getElementById("mcxList").innerHTML = (data.mcx || []).map(row).join("") || "—";
+        document.getElementById("cryptoList").innerHTML = (data.crypto || []).map(row).join("") || "—";
+      } catch (error) {
+        document.getElementById("pulseStrip").textContent = "Pulse unavailable.";
+      }
+    }
+    loadPreopen();
+    loadPulse();
+    setInterval(loadPreopen, 60000);
+    setInterval(loadPulse, 30000);
+  </script>
+</body>
+</html>

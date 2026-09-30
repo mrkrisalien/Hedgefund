@@ -1,7 +1,11 @@
 import pandas as pd
+from datetime import datetime, date, time as dtime
+from zoneinfo import ZoneInfo
 
 import config
 from broker import round_to_tick
+
+IST = ZoneInfo("Asia/Kolkata")
 
 
 def true_range(high, low, prev_close):
@@ -64,19 +68,45 @@ def stop_target_prices(entry, signal, daily_df, tick_size, hourly_df=None, use_h
     return sl, tp, atr
 
 
-def opening_range_entry_price(minute_df, session_date):
-    from datetime import time as dtime
-    from zoneinfo import ZoneInfo
+def as_session_date(value):
+    if value is None:
+        return datetime.now(IST).date()
+    if isinstance(value, datetime):
+        if value.tzinfo is not None:
+            return value.astimezone(IST).date()
+        return value.date()
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return value
+    try:
+        return datetime.strptime(str(value)[:10], "%Y-%m-%d").date()
+    except ValueError:
+        return datetime.now(IST).date()
 
+
+def attach_ist(frame):
+    out = frame.copy()
+    stamps = pd.to_datetime(out["time"], utc=True)
+    ist = stamps.dt.tz_convert(IST)
+    out["ist_stamp"] = ist
+    out["ist_date"] = ist.dt.strftime("%Y-%m-%d")
+    out["ist_time"] = ist.dt.time
+    return out
+
+
+def session_rows(minute_df, session_date):
+    if minute_df is None or getattr(minute_df, "empty", True):
+        return minute_df
+    frame = attach_ist(minute_df)
+    want = as_session_date(session_date).isoformat()
+    return frame[frame["ist_date"] == want].sort_values("ist_stamp")
+
+
+def opening_range_entry_price(minute_df, session_date):
     if minute_df is None or minute_df.empty:
         return None
-    IST = ZoneInfo("Asia/Kolkata")
-    frame = as_five_minute_bars(minute_df)
-    stamps = pd.to_datetime(frame["time"], utc=True)
-    frame = frame.copy()
-    frame["ist_date"] = stamps.dt.tz_convert(IST).dt.date
-    frame["ist_time"] = stamps.dt.tz_convert(IST).dt.time
-    day = frame[frame["ist_date"] == session_date]
+    day = session_rows(as_five_minute_bars(minute_df), session_date)
+    if day is None or day.empty:
+        return None
     opening = day[
         (day["ist_time"] >= dtime(9, 15)) & (day["ist_time"] <= dtime(9, 20))
     ]
@@ -95,18 +125,9 @@ def atr_entry_plan(minute_df, session_date, signal, tick_size, daily_df, hourly_
     open_px = entry
     frame = as_five_minute_bars(minute_df)
     if frame is not None and not frame.empty:
-        from datetime import time as dtime
-        from zoneinfo import ZoneInfo
-
-        IST = ZoneInfo("Asia/Kolkata")
-        stamps = pd.to_datetime(frame["time"], utc=True)
-        frame = frame.copy()
-        frame["ist_date"] = stamps.dt.tz_convert(IST).dt.date
-        frame["ist_time"] = stamps.dt.tz_convert(IST).dt.time
-        opening = frame[
-            (frame["ist_date"] == session_date)
-            & (frame["ist_time"] >= dtime(9, 15))
-            & (frame["ist_time"] <= dtime(9, 20))
+        day = session_rows(frame, session_date)
+        opening = day[
+            (day["ist_time"] >= dtime(9, 15)) & (day["ist_time"] <= dtime(9, 20))
         ]
         if not opening.empty:
             open_px = float(opening.iloc[0]["open"])
@@ -361,25 +382,14 @@ def as_five_minute_bars(minute_df):
 
 def five_minute_entry_plan(minute_df, session_date, signal, tick_size, daily_df=None):
     """BUY stop at previous 5m low; target = REWARD_RATIO x that distance. ATR quality gate."""
-    from datetime import time as dtime
-    from zoneinfo import ZoneInfo
-
     signal = str(signal or "BUY").upper()
     if minute_df is None or minute_df.empty:
         return None, "no 5m bars"
 
-    IST = ZoneInfo("Asia/Kolkata")
     open_start = dtime(9, 15)
     open_end = dtime(9, 20)
-    frame = as_five_minute_bars(minute_df)
-    stamps = pd.to_datetime(frame["time"], utc=True)
-    frame = frame.copy()
-    frame["ist_date"] = stamps.dt.tz_convert(IST).dt.date
-    frame["ist_time"] = stamps.dt.tz_convert(IST).dt.time
-    frame = frame.sort_values("time").reset_index(drop=True)
-
-    day = frame[frame["ist_date"] == session_date]
-    if day.empty:
+    day = session_rows(as_five_minute_bars(minute_df), session_date)
+    if day is None or day.empty:
         return None, "no session 5m bars"
 
     opening = day[(day["ist_time"] >= open_start) & (day["ist_time"] <= open_end)]
@@ -419,7 +429,8 @@ def five_minute_entry_plan(minute_df, session_date, signal, tick_size, daily_df=
     daily_atr = 0.0
     if daily_df is not None and len(daily_df) >= 3:
         daily_atr = average_true_range(daily_df, period=config.ATR_PERIOD)
-    hist = frame[frame["time"] < entry_bar["time"]].tail(30)
+    hist = session_rows(as_five_minute_bars(minute_df), session_date)
+    hist = hist[hist["time"] < entry_bar["time"]].tail(30) if hist is not None else hist
     atr_5m = average_true_range(hist, period=config.ATR_PERIOD) if len(hist) >= 5 else 0.0
     atr = daily_atr or atr_5m or sl_dist
 

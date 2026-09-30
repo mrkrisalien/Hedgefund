@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gamma · Market Command</title>
+  <link rel="stylesheet" href="/app-static/shell.css?v=gamma-strike" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="side-logo">MARKET <span>COMMAND</span></div>
+    <div class="side-group">One desk</div>
+    <nav class="side-nav">
+      <a href="/command">Command</a>
+      <a href="/plan">Plan</a>
+      <a href="/">Execute</a>
+      <a href="/charts">Charts</a>
+      <a class="active" href="/gamma">Gamma</a>
+      <a href="/settings">Settings</a>
+    </nav>
+    <div class="side-note">Expiry calendar and ATM Δ/Γ. No engine orders from this page.</div>
+  </aside>
+  <div class="app-frame">
+    <div id="keyExpiryBanner" class="key-banner" hidden></div>
+    <header class="shell-top">
+      <div>
+        <div class="brand">GAMMA <span>DESK</span></div>
+        <div class="sub">Weekly / monthly expiry · ATM delta · CE+PE pair · 1 of 5 slots</div>
+      </div>
+      <div class="controls">
+        <nav class="desk-switch">
+          <a href="/command">Command</a>
+          <a href="/plan">Plan</a>
+          <a href="/">Execute</a>
+          <a href="/charts">Charts</a>
+          <a class="active" href="/gamma">Gamma</a>
+        </nav>
+        <div>
+          <div class="mode-caption">Today</div>
+          <div class="mode-toggle">
+            <button type="button" id="modePaper" class="paper" onclick="setDeskMode('paper')">Paper</button>
+            <button type="button" id="modeLive" class="live" onclick="setDeskMode('live')">Live</button>
+          </div>
+        </div>
+        <span id="engineControlStatus" class="sub"></span>
+      </div>
+      <div class="live-clock" id="liveClock">IST --:--:--</div>
+    </header>
+    <main class="shell-main">
+      <div class="grid-4">
+        <div class="card">
+          <div class="label">Today</div>
+          <div class="stat" id="todayLabel" style="font-size:18px">—</div>
+          <div id="todayTags" style="margin-top:8px"></div>
+        </div>
+        <div class="card" id="windowCard">
+          <div class="label">Window</div>
+          <div class="stat" id="windowLabel" style="font-size:16px">—</div>
+          <p class="sub" id="windowDetail" style="margin-top:8px;line-height:1.45"></p>
+        </div>
+        <div class="card">
+          <div class="label">India VIX</div>
+          <div class="stat" id="vixStat">—</div>
+          <p class="sub" id="vixNote" style="margin-top:8px"></p>
+        </div>
+        <div class="card" id="sideCard">
+          <div class="label">Tape</div>
+          <div class="stat" id="sideTitle" style="font-size:16px">—</div>
+          <p class="sub" id="sideBody" style="margin-top:8px;line-height:1.45"></p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="label">This week · Mon–Fri IST</div>
+        <p class="sub" style="margin:8px 0 12px">Tue Nifty weekly · last Tue NSE monthly · Thu Sensex weekly · last Thu BSE monthly · MCX gold/silver ~5th · crude ~19th · NG month-end</p>
+        <div class="gamma-week" id="weekGrid">Loading calendar…</div>
+      </div>
+      <div class="card">
+        <div class="label">ATM pair · live chain</div>
+        <p class="sub" id="pairMeta" style="margin:8px 0">Loading strikes…</p>
+        <div id="pairHost"></div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="desk-btn" type="button" id="addPairBtn" onclick="addSelectedPairs()">Add pair to Execute book</button>
+          <button class="desk-btn" type="button" onclick="loadGamma(true)">Refresh chain</button>
+          <span class="sub" id="addStatus"></span>
+        </div>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="label">Safety</div>
+          <p class="sub" id="safetyBody" style="margin-top:8px;line-height:1.55"></p>
+        </div>
+        <div class="card">
+          <div class="label">MCX this month</div>
+          <div id="mcxMonth" class="sub" style="margin-top:8px;line-height:1.7"></div>
+        </div>
+        <div class="card">
+          <div class="label">How to use</div>
+          <p class="sub" style="margin-top:8px;line-height:1.55">Identify expiry from this calendar, then confirm the Dhan contract on the pair. Trade gamma only when Δ is building into ATM on expiry day. Size is one mixed slot. Hedge stays on the book but does not take the breakout. Engine still starts from Execute after 09:25.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="/static/keys.js"></script>
+  <script src="/app-static/shell.js"></script>
+  <script>
+    let gammaData = null;
+
+    function esc(value) {
+      return String(value == null ? "" : value)
+        .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function fmt(value, digits) {
+      const num = Number(value);
+      return Number.isFinite(num) ? num.toFixed(digits) : "—";
+    }
+
+    function tagsHtml(events) {
+      return (events || []).map((item) =>
+        `<span class="gamma-tag ${esc(item.kind)}">${esc(item.label)}</span>`
+      ).join("");
+    }
+
+    function watchKey(row) {
+      const sid = String((row && row.security_id) || "").trim();
+      if (sid) return "SID:" + sid;
+      return [
+        (row && row.exchange) || "NSE",
+        (row && row.instrument) || "OPTIDX",
+        (row && (row.symbol || row.name)) || ""
+      ].map((value) => String(value).trim().toUpperCase()).join(":");
+    }
+
+    function paintWeek(week) {
+      document.getElementById("weekGrid").innerHTML = (week || []).map((day) => {
+        const expiry = (day.events || []).some((item) => item.kind === "nse" || item.kind === "bse");
+        const cls = [day.is_today ? "today" : "", expiry ? "expiry" : ""].filter(Boolean).join(" ");
+        const bits = (day.events || []).map((item) =>
+          `<div class="gamma-tag ${esc(item.kind)}">${esc(item.label)}</div>`
+        ).join("") || `<div class="sub" style="margin-top:8px">No listed expiry</div>`;
+        return `<div class="gamma-day ${cls}">
+          <div class="dow">${esc(day.weekday)}${day.is_today ? " · today" : ""}</div>
+          <div class="date">${esc(day.day)}</div>
+          ${bits}
+        </div>`;
+      }).join("");
+    }
+
+    function fmtStrike(value) {
+      const num = Number(value);
+      return Number.isFinite(num) ? num.toLocaleString("en-IN") : "—";
+    }
+
+    function fmtExpiry(value) {
+      const raw = String(value || "");
+      if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+        const stamp = new Date(raw.slice(0, 10) + "T00:00:00");
+        return stamp.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }).toUpperCase();
+      }
+      return raw;
+    }
+
+    function strikeChip(leg, extraClass) {
+      const side = String((leg && leg.option_type) || "").toUpperCase();
+      const cls = side === "PE" ? "pe" : side === "CE" ? "ce" : "";
+      return `<span class="gamma-strike ${cls} ${extraClass || ""}">${fmtStrike(leg && leg.strike)} ${esc(side || "")}</span>`;
+    }
+
+    function legLine(leg, fallbackRole) {
+      if (!leg || !leg.contract) {
+        return `<div class="gamma-leg-line"><span class="gamma-role">${esc(fallbackRole)}</span><span class="sub">No matching hedge on the chain yet.</span></div>`;
+      }
+      const name = String(leg.contract || "").split(" ")[0] || "";
+      return `<div class="gamma-leg-line">
+        <span class="gamma-role">${esc(leg.role_label || fallbackRole)}</span>
+        <span class="gamma-name">${esc(name)}</span>
+        ${strikeChip(leg)}
+        <span class="sub">${esc(fmtExpiry(leg.expiry))}</span>
+      </div>`;
+    }
+
+    function greekTiles(leg) {
+      if (!leg || !leg.contract) return "";
+      return `<div class="gamma-greeks">
+        <div><div class="label">LTP</div><div class="pulse-price">${fmt(leg.ltp, 2)}</div></div>
+        <div><div class="label">Delta</div><div class="pulse-price">${fmt(leg.delta, 3)}</div></div>
+        <div><div class="label">Gamma</div><div class="pulse-price">${fmt(leg.gamma, 5)}</div></div>
+        <div><div class="label">Theta</div><div class="pulse-price">${fmt(leg.theta, 2)}</div></div>
+        <div><div class="label">IV</div><div class="pulse-price">${fmt(leg.iv, 1)}</div></div>
+        <div><div class="label">OI</div><div class="pulse-price">${leg.oi != null ? Number(leg.oi).toLocaleString() : "—"}</div></div>
+      </div>`;
+    }
+
+    function paintPairs(data) {
+      const host = document.getElementById("pairHost");
+      const pairs = data.pairs || [];
+      const errors = (data.errors || []).filter(Boolean);
+      if (!pairs.length) {
+        host.innerHTML = `<p class="sub">${esc(data.note || data.error || "No CE/PE pair yet. Need a live side and Dhan keys.")}</p>` +
+          (errors.length ? `<p class="sub" style="margin-top:8px">${esc(errors.join(" · "))}</p>` : "");
+        return;
+      }
+      host.innerHTML = pairs.map((pair, index) => {
+        const buy = pair.buy || {};
+        const hedge = pair.hedge || {};
+        const checked = index === 0 ? "checked" : "";
+        return `<div class="gamma-pair">
+          <label style="display:flex;gap:10px;align-items:flex-start">
+            <input type="checkbox" data-pair-index="${index}" ${checked} />
+            <div style="flex:1">
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <strong>${esc(pair.underlying)}</strong>
+                <span class="gamma-tag ${esc(pair.phase)}">${esc(pair.phase)}</span>
+                <span class="sub">spot ${esc(pair.spot ?? "—")}</span>
+                <span class="gamma-strike atm">ATM ${fmtStrike(pair.atm)}</span>
+                <span class="sub">${esc(fmtExpiry(pair.expiry))}</span>
+              </div>
+              ${legLine(buy, "Buy")}
+              ${greekTiles(buy)}
+              ${legLine(hedge, "Hedge")}
+              ${greekTiles(hedge)}
+            </div>
+          </label>
+        </div>`;
+      }).join("");
+    }
+
+    function paintGamma(data) {
+      gammaData = data;
+      document.getElementById("todayLabel").textContent = data.today_label || data.today || "—";
+      document.getElementById("todayTags").innerHTML = tagsHtml(data.today_events);
+      const win = data.window || {};
+      document.getElementById("windowLabel").textContent = win.label || "—";
+      document.getElementById("windowDetail").textContent = win.detail || "";
+      document.getElementById("windowCard").className = "card " + (win.active ? "play-box long" : "");
+      const vix = data.vix;
+      document.getElementById("vixStat").textContent = vix == null ? "—" : Number(vix).toFixed(2);
+      document.getElementById("vixNote").textContent = data.vix_volatile ? "Elevated — half cash, options only if set up" : "Stable unless the chain says otherwise";
+      const side = data.side || "flat";
+      document.getElementById("sideCard").className = "card play-box " + side;
+      document.getElementById("sideTitle").textContent = data.title || side;
+      document.getElementById("sideBody").textContent = data.rule || data.note || "";
+      paintWeek(data.week);
+      paintPairs(data);
+      const safety = data.safety || {};
+      document.getElementById("safetyBody").innerHTML =
+        `${esc(safety.slots)} slots · ${esc(safety.risk)} risk<br>${esc(safety.kill)} kill · ${esc(safety.square)} square-off<br>${esc(safety.hedge)}<br>${esc(safety.engine)}`;
+      document.getElementById("mcxMonth").innerHTML = (data.mcx_month || []).map((item) =>
+        `${esc(item.date)} · ${esc(item.label)} · ${esc(item.when)}`
+      ).join("<br>") || "No MCX marker this month.";
+      const when = data.generated_at ? new Date(data.generated_at).toLocaleTimeString() : "";
+      document.getElementById("pairMeta").textContent =
+        (data.keys_ready ? "Live Dhan chain. " : "Keys missing — calendar still works. ") +
+        (when ? "Updated " + when + "." : "");
+    }
+
+    async function loadGamma(force) {
+      document.getElementById("pairMeta").textContent = force ? "Refreshing chain…" : "Loading strikes…";
+      try {
+        const res = await fetch("/api/gamma" + (force ? "?force=true" : ""));
+        const data = await res.json();
+        if (!res.ok || data.ok === false) {
+          document.getElementById("pairMeta").textContent = data.error || "Gamma feed failed.";
+          if (data.week) paintGamma(data);
+          return;
+        }
+        paintGamma(data);
+      } catch (error) {
+        document.getElementById("pairMeta").textContent = "Gamma feed unavailable.";
+      }
+    }
+
+    function rowFromLeg(leg, role) {
+      if (!leg || !leg.contract) return null;
+      return {
+        rank: 99,
+        name: leg.contract,
+        symbol: leg.contract,
+        exchange: leg.exchange || "NSE",
+        instrument: leg.instrument || "OPTIDX",
+        strategy: "breakout",
+        catalyst: (leg.role_label || role) + " · " + (leg.why || "gamma desk"),
+        chase_risk: "medium",
+        security_id: String(leg.security_id || ""),
+        expiry: leg.expiry || "",
+        option_role: leg.role || role,
+        hedge_for: leg.hedge_for || "",
+        option_type: leg.option_type || ""
+      };
+    }
+
+    async function addSelectedPairs() {
+      const status = document.getElementById("addStatus");
+      const boxes = [...document.querySelectorAll("[data-pair-index]:checked")];
+      if (!gammaData || !boxes.length) {
+        status.textContent = "Tick at least one pair.";
+        return;
+      }
+      const btn = document.getElementById("addPairBtn");
+      btn.disabled = true;
+      status.textContent = "Saving…";
+      try {
+        const current = await fetch("/api/watchlist").then((res) => res.json());
+        const names = [...(current.names || [])];
+        const keys = new Set(names.map(watchKey));
+        let added = 0;
+        boxes.forEach((box) => {
+          const pair = (gammaData.pairs || [])[Number(box.getAttribute("data-pair-index"))];
+          if (!pair) return;
+          [rowFromLeg(pair.buy, "directional"), rowFromLeg(pair.hedge, "hedge")].forEach((item) => {
+            if (!item) return;
+            const key = watchKey(item);
+            if (keys.has(key)) return;
+            item.rank = names.length + 1;
+            names.push(item);
+            keys.add(key);
+            added += 1;
+          });
+        });
+        if (!added) {
+          status.textContent = "Already on the Execute book.";
+          return;
+        }
+        const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+        const res = await fetch("/api/watchlist", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date: today, names })
+        });
+        const data = await res.json();
+        const skipped = (data.skipped || []).map((item) => item.name || item.error).filter(Boolean);
+        status.textContent = skipped.length
+          ? `Saved ${data.count || names.length}. Skipped ${skipped.join(" · ")}`
+          : `Saved ${data.count || names.length} on Execute.`;
+      } catch (error) {
+        status.textContent = "Could not add pair.";
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (window.HedgeKeys) {
+        try { await HedgeKeys.syncToServer(); } catch (error) {}
+        HedgeKeys.renderBanner(document.getElementById("keyExpiryBanner"));
+      }
+      await loadGamma(false);
+      setInterval(() => {
+        if (!document.hidden) loadGamma(false);
+      }, 90000);
+    });
+  </script>
+</body>
+</html>

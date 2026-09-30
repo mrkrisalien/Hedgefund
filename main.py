@@ -1,5 +1,6 @@
 import asyncio
 import json
+import threading
 from contextlib import asynccontextmanager
 from datetime import datetime, time, timezone
 from pathlib import Path
@@ -45,6 +46,7 @@ from rung_trail import manage_rung_trails
 from market_pulse import market_pulse
 from preopen import build_briefing, load_saved as load_preopen
 from index_option_picks import build_picks as build_index_option_picks
+from gamma_desk import build_gamma_desk
 from morning_scan import morning_universe
 from paper_book import (
     get_eod_report as paper_eod_report,
@@ -79,6 +81,8 @@ from watchlist import (
     load_watchlist,
     normalize_option_contract,
     save_watchlist,
+    watchlist_row_key,
+    watchlist_stamp,
 )
 
 
@@ -96,6 +100,7 @@ INDEX_FILE = TEMPLATES_DIR / "index.html"
 PLAN_FILE = TEMPLATES_DIR / "plan.html"
 COMMAND_FILE = TEMPLATES_DIR / "command.html"
 CHARTS_FILE = TEMPLATES_DIR / "charts.html"
+GAMMA_FILE = TEMPLATES_DIR / "gamma.html"
 SETTINGS_FILE = TEMPLATES_DIR / "settings.html"
 STATIC_DIR = BASE_DIR / "static"
 KEYS_JS_FILE = TEMPLATES_DIR / "keys.js"
@@ -139,6 +144,14 @@ bot_state = {
 
 apply_saved_desk_mode(bot_state)
 restore_snapshot(bot_state)
+_WATCHLIST_LOCK = threading.Lock()
+
+
+def _apply_analyzed_watchlist(rows, stamp):
+    if watchlist_stamp() != stamp:
+        return False
+    bot_state["watchlist"] = rows
+    return True
 
 
 class ControlRequest(BaseModel):
@@ -157,6 +170,9 @@ class WatchlistName(BaseModel):
     instrument: str | None = None
     security_id: str | None = None
     expiry: str | None = None
+    option_role: str | None = None
+    hedge_for: str | None = None
+    option_type: str | None = None
     strategy: str = "breakout"
     catalyst: str = ""
     chase_risk: str = "medium"
@@ -322,6 +338,13 @@ async def charts_page():
     return HTMLResponse("<h1>Charts not found</h1>", status_code=500)
 
 
+@app.get("/gamma", response_class=HTMLResponse)
+async def gamma_page():
+    if GAMMA_FILE.exists():
+        return HTMLResponse(GAMMA_FILE.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>Gamma not found</h1>", status_code=500)
+
+
 @app.get("/settings", response_class=HTMLResponse)
 async def settings_page():
     if SETTINGS_FILE.exists():
@@ -447,6 +470,14 @@ async def get_index_options(force: bool = False):
         return {"ok": False, "error": str(error), "rows": []}
 
 
+@app.get("/api/gamma")
+async def get_gamma(force: bool = False):
+    try:
+        return await asyncio.to_thread(build_gamma_desk, force)
+    except Exception as error:
+        return {"ok": False, "error": str(error), "week": [], "pairs": []}
+
+
 @app.post("/api/control")
 async def control_bot(request: ControlRequest):
     action = (request.action or "").lower()
@@ -463,9 +494,7 @@ async def control_bot(request: ControlRequest):
                 "bot_state": bot_state,
                 "credentials": credentials_status(),
             }
-        cash_pnl, mcx_pnl = realized_pnl_today()
-        if getattr(config, "PAPER_TRADE", False):
-            cash_pnl += paper_realized_pnl_today()
+        cash_pnl, mcx_pnl = _desk_realized_pnl()
         bot_state["cash_pnl_today"] = cash_pnl
         bot_state["mcx_pnl_today"] = mcx_pnl
         realized = cash_pnl + mcx_pnl
@@ -520,6 +549,31 @@ def _book_mode():
     return "paper" if getattr(config, "PAPER_TRADE", False) else "live"
 
 
+def _desk_open_positions():
+    """Paper mode never reads or flattens the Dhan live book."""
+    if getattr(config, "PAPER_TRADE", False):
+        refresh_paper_positions()
+        return paper_open_positions()
+    return get_open_positions()
+
+
+def _desk_realized_pnl():
+    if getattr(config, "PAPER_TRADE", False):
+        return float(paper_realized_pnl_today() or 0), 0.0
+    return realized_pnl_today()
+
+
+def _flatten_desk_positions(positions):
+    paper = getattr(config, "PAPER_TRADE", False)
+    for pos in positions or []:
+        if paper and not pos.get("paper"):
+            continue
+        try:
+            close_position(pos)
+        except Exception as error:
+            print(f"[SYSTEM] Flatten failed for {pos.get('ticket')}: {error}")
+
+
 def _normalize_book_date(value=None):
     text = str(value or "").strip()[:10]
     return text if len(text) == 10 else today_ist()
@@ -539,7 +593,7 @@ def _attach_selected_book(book_date, dhan_cash=0.0):
             row for row in paper_pos if str(row.get("ticket")) not in seen
         ]
         bot_state["cash_pnl_today"] = (
-            float(dhan_cash or 0) + paper_realized_pnl_today()
+            paper_realized_pnl_today()
             if is_today
             else float(paper_day_pnl_stats(book_date).get("realized_pnl") or 0)
         )
@@ -629,9 +683,14 @@ async def get_status(date: str = ""):
         bot_state["equity"] = get_equity()
         bot_state["broker_authenticated"] = True
         bot_state["broker_error"] = ""
-        bot_state["open_positions"] = get_open_positions()
-        dhan_cash = sum(realized_pnl_today())
-        bot_state["cash_pnl_today"] = dhan_cash
+        if getattr(config, "PAPER_TRADE", False):
+            bot_state["open_positions"] = []
+            dhan_cash = 0.0
+            bot_state["cash_pnl_today"] = 0.0
+        else:
+            bot_state["open_positions"] = get_open_positions()
+            dhan_cash = sum(realized_pnl_today())
+            bot_state["cash_pnl_today"] = dhan_cash
         if not getattr(config, "PAPER_TRADE", False):
             bot_state["pending_orders"] = live_pending_orders_today()
         if not bot_state.get("day_start_equity") and bot_state.get("equity"):
@@ -641,6 +700,11 @@ async def get_status(date: str = ""):
         bot_state["broker_error"] = str(error)
         bot_state["open_positions"] = []
         bot_state["cash_pnl_today"] = 0.0
+    if getattr(config, "PAPER_TRADE", False) and book_date == today_ist():
+        try:
+            refresh_paper_positions()
+        except Exception:
+            pass
     _attach_selected_book(book_date, dhan_cash)
     doc = load_rules_document()
     bot_state["learned_rules"] = doc.get("rules") or []
@@ -655,6 +719,7 @@ async def get_status(date: str = ""):
     payload = dict(bot_state)
     payload["credentials"] = credentials_status()
     payload["watchlist"] = _public_watchlist(book_date)
+    payload["crypto_watchlist"] = load_delta_universe().get("instruments") or []
     payload.update(_book_pnl_payload(book_date))
     payload["book_dates"] = (
         paper_available_dates() if payload["desk_mode"] == "paper" else live_available_dates()
@@ -738,6 +803,7 @@ def _watchlist_public_row(row, paper_fill=None):
         "exchange": row.get("exchange"),
         "instrument": row.get("instrument"),
         "security_id": row.get("security_id"),
+        "option_role": row.get("option_role"),
         "strategy": row.get("strategy") or "breakout",
         "catalyst": row.get("catalyst"),
         "chase_risk": row.get("chase_risk"),
@@ -776,6 +842,19 @@ def _watchlist_public_row(row, paper_fill=None):
     }
 
 
+def _analyzed_by_key():
+    mapped = {}
+    for row in bot_state.get("watchlist") or []:
+        if not isinstance(row, dict):
+            continue
+        mapped[watchlist_row_key(row)] = row
+        for field in (row.get("input_symbol"), row.get("symbol"), row.get("name")):
+            text = str(field or "").strip().upper()
+            if text:
+                mapped.setdefault(text, row)
+    return mapped
+
+
 def _public_watchlist(book_date=None):
     book_date = _normalize_book_date(book_date or bot_state.get("book_date"))
     if getattr(config, "PAPER_TRADE", False):
@@ -784,10 +863,23 @@ def _public_watchlist(book_date=None):
     else:
         fills = live_levels_by_symbol(book_date)
         extra_strategy = "live"
-    rows = bot_state.get("watchlist") or []
-    source = rows
-    if not (rows and isinstance(rows[0], dict) and "ok" in rows[0]):
-        source = load_watchlist().get("names") or []
+    disk = load_watchlist().get("names") or []
+    analyzed = _analyzed_by_key()
+    source = []
+    for item in disk:
+        match = (
+            analyzed.get(watchlist_row_key(item))
+            or analyzed.get(str(item.get("symbol") or "").upper())
+            or analyzed.get(str(item.get("name") or "").upper())
+            or item
+        )
+        merged = dict(item)
+        merged.update({key: match.get(key) for key in match if key not in {"name", "symbol", "security_id"}})
+        merged["name"] = item.get("name") or match.get("name")
+        merged["symbol"] = match.get("symbol") or item.get("symbol")
+        merged["input_symbol"] = item.get("symbol") or item.get("name")
+        merged["security_id"] = item.get("security_id") or match.get("security_id")
+        source.append(merged)
     out = []
     seen = set()
     for row in source:
@@ -903,7 +995,8 @@ async def api_watchlist(request: WatchlistRequest):
         "date": request.date or str(datetime.now(IST).date()),
         "names": names,
     }
-    save_watchlist(doc)
+    with _WATCHLIST_LOCK:
+        save_watchlist(doc)
     prior = {
         str(row.get("symbol") or row.get("name") or "").upper(): row
         for row in (bot_state.get("watchlist") or [])
@@ -927,12 +1020,13 @@ async def api_watchlist(request: WatchlistRequest):
     bot_state["watchlist"] = names
     save_snapshot(bot_state, min_interval=0)
     await asyncio.to_thread(invalidate_chart_cache)
+    stamp = watchlist_stamp()
     try:
         analyzed = await asyncio.to_thread(analyze_watchlist, datetime.now(IST).date())
-        bot_state["watchlist"] = analyzed
-        _record_breakout_alerts(analyzed)
-        _publish_watchlist_plan(analyzed)
-        save_snapshot(bot_state, min_interval=0)
+        if _apply_analyzed_watchlist(analyzed, stamp):
+            _record_breakout_alerts(analyzed)
+            _publish_watchlist_plan(analyzed)
+            save_snapshot(bot_state, min_interval=0)
     except Exception as error:
         print(f"[WATCHLIST] Immediate analyze failed: {error}")
     if datetime.now(IST).time() < SCAN_CUTOFF:
@@ -971,6 +1065,13 @@ async def api_close(request: CloseRequest):
     try:
         result = close_position(request.ticket)
         print(f"[REVERSAL] Closed {request.ticket}: {result}")
+        if getattr(config, "PAPER_TRADE", False):
+            refresh_paper_positions()
+            bot_state["open_positions"] = paper_open_positions()
+            bot_state["trade_history"] = paper_trade_history()
+            bot_state["cash_pnl_today"] = paper_realized_pnl_today()
+        else:
+            bot_state["open_positions"] = get_open_positions()
         return {"success": True, "result": result}
     except Exception as error:
         return {"success": False, "error": str(error)}
@@ -1167,9 +1268,7 @@ def reset_session(today):
 
 
 def _position_side_for_symbol(display):
-    positions = get_open_positions()
-    if getattr(config, "PAPER_TRADE", False):
-        positions += paper_open_positions()
+    positions = _desk_open_positions()
     for pos in positions:
         name = str(pos.get("symbol") or "").upper()
         if display.upper() in name or name in display.upper():
@@ -1431,12 +1530,13 @@ async def breakout_alert_loop():
             and active_hours
         ):
             try:
+                stamp = watchlist_stamp()
                 rows = await asyncio.to_thread(
                     analyze_watchlist, now.date()
                 )
-                bot_state["watchlist"] = rows
-                _record_breakout_alerts(rows)
-                _publish_watchlist_plan(rows)
+                if _apply_analyzed_watchlist(rows, stamp):
+                    _record_breakout_alerts(rows)
+                    _publish_watchlist_plan(rows)
             except Exception as error:
                 print(f"[ALERT] Breakout refresh failed: {error}")
         await asyncio.sleep(max(15, int(bot_state.get("interval") or 30)))
@@ -1449,7 +1549,7 @@ async def paper_maintenance_loop():
             now = datetime.now(IST)
             try:
                 if (
-                    bot_state.get("broker_authenticated")
+                    (bot_state.get("broker_authenticated") or dhan_ready())
                     and now.weekday() < 5
                     and time(9, 15) <= now.time() <= time(15, 35)
                 ):
@@ -1505,21 +1605,19 @@ async def trading_loop():
                 )
             await asyncio.to_thread(reconcile_closed_trades)
             try:
-                positions = await asyncio.to_thread(get_open_positions)
+                positions = await asyncio.to_thread(_desk_open_positions)
                 bot_state["open_positions"] = positions
             except Exception as pos_error:
                 print(f"[SYSTEM] Open-position fetch failed: {pos_error}")
                 raise
-            try:
-                trailed = await asyncio.to_thread(manage_rung_trails, positions)
-                if trailed:
-                    print(f"[TRAIL] Advanced {trailed} rung(s).")
-            except Exception as trail_error:
-                print(f"[TRAIL] Rung manager skipped: {trail_error}")
-            cash_pnl, mcx_pnl = await asyncio.to_thread(realized_pnl_today)
-            if getattr(config, "PAPER_TRADE", False):
-                await asyncio.to_thread(refresh_paper_positions)
-                cash_pnl += await asyncio.to_thread(paper_realized_pnl_today)
+            if not getattr(config, "PAPER_TRADE", False):
+                try:
+                    trailed = await asyncio.to_thread(manage_rung_trails, positions)
+                    if trailed:
+                        print(f"[TRAIL] Advanced {trailed} rung(s).")
+                except Exception as trail_error:
+                    print(f"[TRAIL] Rung manager skipped: {trail_error}")
+            cash_pnl, mcx_pnl = await asyncio.to_thread(_desk_realized_pnl)
             bot_state["cash_pnl_today"] = cash_pnl
             bot_state["mcx_pnl_today"] = mcx_pnl
             session_pnl = cash_pnl + mcx_pnl
@@ -1543,11 +1641,7 @@ async def trading_loop():
                     f"Rs {combined_pnl:.2f} hits Rs {limit:.0f} "
                     f"(realized {session_pnl:.2f} + floating {floating:.2f}). Flattening all."
                 )
-                for pos in positions:
-                    try:
-                        await asyncio.to_thread(close_position, pos)
-                    except Exception as error:
-                        print(f"[SYSTEM] Flatten failed for {pos.get('ticket')}: {error}")
+                await asyncio.to_thread(_flatten_desk_positions, positions)
                 bot_state["is_running"] = False
                 bot_state["orders_placed"] = True
                 _save_paper_session()
@@ -1573,7 +1667,7 @@ async def trading_loop():
             except Exception as error:
                 print(f"[LEARNING] Post-scan reconcile failed: {error}")
             try:
-                positions = await asyncio.to_thread(get_open_positions)
+                positions = await asyncio.to_thread(_desk_open_positions)
                 floating = 0.0
                 for pos in positions:
                     try:
@@ -1594,11 +1688,7 @@ async def trading_loop():
                         f"[SYSTEM] Session {cap_reason} cap Rs {limit:.0f} "
                         f"hit (realized {realized:.2f} + floating {floating:.2f}). Flattening."
                     )
-                    for pos in positions:
-                        try:
-                            await asyncio.to_thread(close_position, pos)
-                        except Exception as error:
-                            print(f"[SYSTEM] Flatten failed for {pos.get('ticket')}: {error}")
+                    await asyncio.to_thread(_flatten_desk_positions, positions)
             except Exception as error:
                 print(f"[SYSTEM] Session loss check failed: {error}")
             await asyncio.sleep(bot_state["interval"])
@@ -1614,7 +1704,7 @@ async def trading_loop():
 
         if bot_state.get("filled_sources"):
             try:
-                positions = await asyncio.to_thread(get_open_positions)
+                positions = await asyncio.to_thread(_desk_open_positions)
                 floating = sum(float(pos.get("pnl") or 0) for pos in positions)
                 realized = float(bot_state.get("cash_pnl_today") or 0) + float(
                     bot_state.get("mcx_pnl_today") or 0
@@ -1630,11 +1720,7 @@ async def trading_loop():
                         f"[SYSTEM] Shared Rs {limit:.0f} {cap_reason} cap hit. "
                         "Flattening all positions."
                     )
-                    for pos in positions:
-                        try:
-                            await asyncio.to_thread(close_position, pos)
-                        except Exception as error:
-                            print(f"[SYSTEM] Flatten failed for {pos.get('ticket')}: {error}")
+                    await asyncio.to_thread(_flatten_desk_positions, positions)
                     bot_state["orders_placed"] = True
                     continue
             except Exception as error:
@@ -1656,10 +1742,12 @@ async def trading_loop():
                 f"then 3m close above today's high after {SCAN_LOCK.strftime('%H:%M')} IST, "
                 f"1:{config.REWARD_RATIO:g}, Rs {config.CATALYST_RISK_RS:.0f} per slot..."
             )
+            stamp = watchlist_stamp()
             scan = await asyncio.to_thread(morning_universe, today)
-            bot_state["watchlist"] = scan.get("watchlist") or []
-            _record_breakout_alerts(bot_state["watchlist"])
-            _publish_watchlist_plan(bot_state["watchlist"])
+            rows = scan.get("watchlist") or []
+            if _apply_analyzed_watchlist(rows, stamp):
+                _record_breakout_alerts(rows)
+                _publish_watchlist_plan(rows)
             bot_state["top_sectors"] = [
                 {"sector": row["sector"], "momentum": round(row["momentum"] * 100, 3)}
                 for row in scan["sectors"]
@@ -1688,7 +1776,7 @@ async def trading_loop():
                 _save_paper_session()
 
             try:
-                bot_state["open_positions"] = await asyncio.to_thread(get_open_positions)
+                bot_state["open_positions"] = await asyncio.to_thread(_desk_open_positions)
             except Exception:
                 bot_state["open_positions"] = bot_state.get("open_positions") or []
             filled_symbols = {

@@ -15,6 +15,7 @@ memory.json
 security_id_list.csv
 data/ohlc_cache/
 data/paper_session.json
+data/desk_mode.json
 data/reports/
 
 # Large generated research dumps
